@@ -1,0 +1,9 @@
+work/
+node_modules/
+*.tgz
+.DS_Store
+
+# Publish only reviewed user/maintainer docs; keep development notes local.
+/docs/*
+!/docs/operations.zh-CN.md
+!/docs/publishing.md
