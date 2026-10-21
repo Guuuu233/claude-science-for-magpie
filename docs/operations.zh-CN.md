@@ -66,7 +66,7 @@ node src/cli.js uninstall
 
 ## 功能边界
 
-Science 会列出 Magpie 模型目录中的全部模型：Claude TUI 模型以 Claude 原名（如 `claude-opus-5-5`）出现，走插件选项 `claude` 指定的 provider（默认 `gtt-claude/claude-tui`）；其他模型保留 Magpie 原 ID。短对话和协议级工具调用已验证；图片、长会话压缩和完整科研流程尚未验证。Anthropic 托管 MCP、搜索及账号服务不由插件提供，相关 401 日志不代表模型推理一定失败。
+Science 会列出 Magpie 模型目录中的全部模型：Claude TUI 模型以 Claude 原名（如 `claude-opus-5-5`）出现，走 `install --claude <provider>` 指定的 provider（默认 `claude-tui`）；其他模型以固定别名 `claude-x-<原ID>-<哈希>` 出现（Science 只显示 `claude-` 开头的 ID），请求仍发往对应的 Magpie 模型。短对话和协议级工具调用已验证；图片、长会话压缩和完整科研流程尚未验证。Anthropic 托管 MCP、搜索及账号服务不由插件提供，相关 401 日志不代表模型推理一定失败。
 
 本地验证：`npm test`、`npm run check:package`、`npm run test:integration`。GitHub CI 执行同类检查；它使用模拟 Science，不下载或运行用户的真实科研数据。
 

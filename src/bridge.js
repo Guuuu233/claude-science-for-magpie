@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { randomUUID, timingSafeEqual } from 'node:crypto';
+import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import fs from 'node:fs';
 
 // The bridge is Claude Science's Anthropic endpoint. It relays every request
@@ -8,7 +8,7 @@ import fs from 'node:fs';
 // those. It adds the conversation's identity (x-session-id), which the
 // Claude TUI runtime needs to keep one native session per Science frame.
 
-export const DEFAULT_CLAUDE='gtt-claude/claude-tui';
+export const DEFAULT_CLAUDE='claude-tui';
 export function validateConfig(c) {
   const u=new URL(c.gateway);
   if(!['http:','https:'].includes(u.protocol)||!['127.0.0.1','[::1]'].includes(u.hostname)||u.username||u.password||u.search||u.hash||!['','/'].includes(u.pathname)) throw Error('Gateway must be a literal loopback origin');
@@ -21,13 +21,25 @@ export function validateConfig(c) {
 
 // Magpie answers Anthropic clients with claude-magpie-* aliases of its own
 // models; those are Magpie's names, not Claude's, and pass through as is.
-const CLAUDE_ID=/^claude-(?!magpie-)[a-z0-9][-a-z0-9.]*$/;
-const TUI_CLAUDE=/\/claude-tui(?:-[a-z0-9]+)?\/(claude-[a-z0-9][-a-z0-9.]*)$/;
+const CLAUDE_ID=/^claude-(?!magpie-|x-)[a-z0-9][-a-z0-9.]*$/;
+const TUI_CLAUDE=/(?:^|\/)claude-tui(?:-[a-z0-9]+)?\/(claude-[a-z0-9][-a-z0-9.]*)$/;
+// Science lists only ids starting with "claude-" whose name is not a bare
+// slug. Every other Magpie model is offered under a stable alias,
+// claude-x-<slug>-<hash>, and named so Science keeps it.
+const ALIAS='claude-x-';
+export function aliasOf(id){
+  const slug=id.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,48);
+  return ALIAS+slug+'-'+createHash('sha256').update(id).digest('hex').slice(0,6);
+}
+function shownName(name,id){
+  return /^[\p{Extended_Pictographic}\p{Emoji_Presentation}]/u.test(name)||/^[a-z][a-z0-9]*(?:-[a-z0-9]+)+$/.test(name)?name+' · '+id.split('/')[0]:name;
+}
 // Science's own model names (its defaults, its helpers) are Claude names:
-// they run on the Claude TUI provider of the same name. Every other Magpie
-// model is offered under its own id.
-export function upstreamModel(id,c){
+// they run on the Claude TUI provider of the same name. An alias runs on the
+// Magpie model it names (ids: Magpie's catalog); other ids are unchanged.
+export function upstreamModel(id,c,ids=[]){
   if(CLAUDE_ID.test(id))return (c.claude||DEFAULT_CLAUDE)+'/'+id;
+  if(id.startsWith(ALIAS))return ids.find(x=>aliasOf(x)===id)||null;
   return id;
 }
 // Science learns a model's limits from this list; Claude TUI models appear
@@ -41,7 +53,7 @@ export function buildCatalog(models,c){
     const name=m.display_name||m.name||m.id;
     const tui=m.id.match(TUI_CLAUDE);
     if(tui&&!seen.has(tui[1])){seen.add(tui[1]);claude.push(entry(tui[1],m,name.includes('TUI')?name:name+' · Claude TUI'));}
-    if(!CLAUDE_ID.test(m.id)&&!m.id.startsWith(own))other.push(entry(m.id,m,m.magpie_label||name));
+    if(!CLAUDE_ID.test(m.id)&&!m.id.startsWith(own))other.push(entry(m.id.startsWith('claude-')?m.id:aliasOf(m.id),m,shownName(m.magpie_label||name,m.id)));
   }
   const data=[...claude,...other];
   if(!data.length)data.push(entry('claude-opus-5-5',{},'Claude Opus 5.5 · Claude TUI'));
@@ -127,7 +139,10 @@ export function createBridge(readConfig) {
       let body;try{body=JSON.parse(Buffer.concat(chunks));}catch{return error(res,400,'Invalid JSON');}
       if(!body||typeof body!=='object'||typeof body.model!=='string'||!/^[-\w.]+(\/[-\w./:]+)?$/.test(body.model))return error(res,400,'Invalid model');
       const asked=body.model;
-      body.model=upstreamModel(asked,c);
+      let ids=[];
+      if(asked.startsWith('claude-x-'))try{ids=(await models(c)).map(m=>m.id);}catch(e){return error(res,503,String(e.message||e));}
+      body.model=upstreamModel(asked,c,ids);
+      if(!body.model)return error(res,404,'Unknown model: '+asked);
       const session=sessionLabel(body);
       entry={session,model:asked,target:body.model,endpoint:url.pathname,stream:body.stream===true};
       const headers={'content-type':'application/json','authorization':`Bearer ${c.key}`,'anthropic-version':req.headers['anthropic-version']||'2023-06-01',

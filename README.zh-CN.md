@@ -1,6 +1,6 @@
-# Claude Science for Magpie
+> **社区分支：** 本项目基于 Sia（shiyang1026）的 MIT 许可原项目。npm 的 `magpie-claude-science@latest` **不是本分支**；请从本仓库源码或 GitHub Release 获取。未启用自动 npm 发布。
 
-> **社区轻量分支（源码安装）**：本项目基于 Sia 的 MIT 许可原项目改造。`npx magpie-claude-science@latest` 仍会安装原作者的 npm 版本，**不是本仓库的新架构**。使用本版本请克隆仓库、执行 `npm ci --ignore-scripts`，随后执行 `node src/cli.js install --claude gtt-claude/claude-tui-canary`；本仓库不自动发布 npm。
+# Claude Science for Magpie
 
 [English](README.md) · 简体中文
 
@@ -74,13 +74,13 @@ Claude Science → 本地兼容服务 → Magpie → 选定的供应商 / 模型
 
 ## 当前限制
 
-- Science 会列出 Magpie 模型目录中的全部模型。Claude TUI 模型以 Claude 原名（如 `claude-opus-5-5`）出现，走插件选项 `claude` 指定的 provider（默认 `gtt-claude/claude-tui`）；其他模型保留 Magpie 原 ID。网关始终为回环地址，不绑定 VPS。
+- Science 会列出 Magpie 模型目录中的全部模型。Claude TUI 模型以 Claude 原名（如 `claude-opus-5-5`）出现，走 `install --claude <provider>` 指定的 provider（默认 `claude-tui`，即本机 Magpie 上的 Claude TUI 插件；远程 Magpie 的写法如 `my-vps/claude-tui`）。Science 只显示以 `claude-` 开头的 ID，所以其他模型以固定别名 `claude-x-<原ID>-<哈希>` 出现，名称不变，请求仍发往对应的 Magpie 模型。网关始终为回环地址，不绑定 VPS。
 - 不提供 Anthropic 托管的搜索、MCP 和账号服务。
 - 完整科研流程、长会话和图片支持尚未验证。
 - 已自动化测试受管孤儿进程恢复和程序更新检测；真实 macOS 重启竞态及后续 Science 版本仍需验证。Science 更新后，请先结束任务再重启接入。
 ### 供应商能力兼容性
 
-在 Claude TUI 模型上进行长时间的 Science 对话，需要一个能按 Science 自身历史服务 `science-<frame>` 会话的 TUI Boost runtime（science-lite 补丁）：历史能接上原生会话时直接续接，接不上时用这份历史重建。未打补丁的 TUI Boost 会拒绝被改写或被中断过的历史。其他 Magpie 供应商是普通的无状态模型，不需要任何特殊处理。
+在 Claude TUI 模型上进行长时间的 Science 对话，需要一个按每个对话自身历史服务的 TUI Boost runtime（tui-lite 版本）：历史能接上原生会话时直接续接，接不上时用这份历史重建。原版 TUI Boost 0.2.x 会拒绝被改写或被中断过的历史（409/502）。其他 Magpie 供应商是普通的无状态模型，不需要任何特殊处理。
 
 - 暂不支持自定义 XDG 配置根或已迁移的 Science 数据目录。
 
@@ -93,7 +93,7 @@ npm run check:release
 npm run test:integration  # 离线：临时 HOME、复制软件包并执行真实部署路径
 ```
 
-`check:package` 校验 `npm pack --dry-run` 的精确文件面：4 个已验收运行模块、文件白名单，以及不得包含密钥、状态、认证、会话转储、日志和二进制。`check:release` 还额外对入口执行 `node --check`。集成测试不需要 Magpie、Claude Science 或网络。
+`check:package` 校验 `npm pack --dry-run` 的精确文件面：已验收的运行模块、文件白名单，以及不得包含密钥、状态、认证、会话转储、日志和二进制。`check:release` 还额外对入口执行 `node --check`。集成测试不需要 Magpie、Claude Science 或网络。
 
 CI 覆盖 Node 22/24 × Linux/macOS、打包部署检查及固定版本的 Magpie 集成。Release Please 根据规范提交生成版本号和 [CHANGELOG](CHANGELOG.md) 的发布 PR。你审核合并后，同一工作流创建 GitHub Release、测试对应提交，并等待 `npm` 环境审批后通过 OIDC 发布。保留按版本标签手动触发的恢复入口。详见[发布配置](docs/publishing.md)。
 

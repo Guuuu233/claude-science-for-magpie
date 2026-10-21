@@ -1,5 +1,15 @@
 # 更新日志 / Changelog
 
+## 0.2.0 (2026-10-22)
+
+### 变更 / Changes
+
+- 兼容服务改为纯中继：删除本地重试、排队、路由亲和与交接检测（`session-scheduler`、`route-affinity`、`handoff-detect`、`request-lifecycle`、`upstream-error`）；错误原样返回，客户端断开即取消上游。
+- Science 列出 Magpie 全部模型：Claude TUI 模型用 Claude 原名，其他模型以 `claude-x-<原ID>-<哈希>` 别名出现（Science 只显示 `claude-` 开头的 ID）。
+- 新增 `install/upgrade --claude <provider>`，默认 `claude-tui`（本机 Magpie 上的 Claude TUI 插件）。
+- 只有 Science 主线 agent 携带 `x-session-id: science-<frame>`；fork 与辅助调用无会话。
+- 长对话需要 tui-lite 版 TUI Boost runtime；原版 0.2.x 会拒绝被改写或中断的历史。
+
 ## 0.1.4 (2026-10-20)
 
 ### 打包与运行

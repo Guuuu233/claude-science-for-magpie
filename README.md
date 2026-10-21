@@ -1,12 +1,12 @@
-# Claude Science for Magpie
+> **Community fork:** based on the original MIT-licensed project by Sia (shiyang1026). The npm package `magpie-claude-science@latest` is **not this fork**. Download this repository’s GitHub Release or install from checked-out source; no automatic npm publishing is enabled.
 
-> **Community fork / source build.** This repository contains the lightweight TUI relay fork based on Sia’s MIT-licensed magpie-claude-science. The npm `magpie-claude-science@latest` package is maintained upstream and **does not contain this fork**. For the fork, clone this repository, run `npm ci --ignore-scripts`, then `node src/cli.js install --claude gtt-claude/claude-tui-canary`. Automatic npm publishing is disabled here.
+# Claude Science for Magpie
 
 English · [简体中文](README.zh-CN.md)
 
 [![npm](https://img.shields.io/npm/v/magpie-claude-science)](https://www.npmjs.com/package/magpie-claude-science)
 [![CI](https://github.com/Guuuu233/magpie-claude-science/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Guuuu233/magpie-claude-science/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/Guuuu233/magpie-claude-science)](https://github.com/Guuuu233/magpie-claude-science/releases)
+[![Release](https://img.shields.io/github/v/release/shiyang1026/magpie-claude-science)](https://github.com/Guuuu233/magpie-claude-science/releases)
 
 Use Magpie's models in Claude Science while keeping the original macOS app icon. Complete the terminal setup below first; then choose models in **Magpie → Agent → Claude Science** and open Science as usual.
 
@@ -74,17 +74,17 @@ Data, local identity and versioned runtime files live under `~/.config/magpie/cl
 
 ## Limitations
 
-- Science lists every model in your Magpie catalog. Claude TUI models appear under their Claude names (`claude-opus-5-5`, ...) and run on the provider in the plugin option `claude` (default `gtt-claude/claude-tui`); every other model keeps its Magpie id.
+- Science lists every model in your Magpie catalog. Claude TUI models appear under their Claude names (`claude-opus-5-5`, ...) and run on the provider chosen with `install --claude <provider>` (default `claude-tui`, the Claude TUI plugin on this Magpie; a remote Magpie's is e.g. `my-vps/claude-tui`). Science only shows ids starting with `claude-`, so every other model appears under a stable alias `claude-x-<id>-<hash>` with its Magpie name, and runs on that Magpie model.
 - Anthropic-hosted search, MCP and account services are not provided.
 - Full scientific workflows, long sessions and image support remain unverified.
 - Owned-orphan recovery and executable-change detection have automated tests. Real macOS reboot races and future Science versions still need validation. Finish current tasks before restarting after a Science update.
 ### Provider capability compatibility
 
 Long Science conversations on Claude TUI models need a TUI Boost runtime that
-serves `science-<frame>` sessions from Science's own history (the science-lite
-patch): it resumes the native session when the history follows it and rebuilds
-it from that history otherwise. A plain TUI Boost runtime refuses rewritten or
-interrupted histories. Other Magpie providers are ordinary stateless models
+serves each conversation from its own history (the tui-lite build): it resumes
+the native session when the history follows it and rebuilds it from that
+history otherwise. A plain TUI Boost 0.2.x runtime refuses rewritten or
+interrupted histories (409/502). Other Magpie providers are ordinary stateless models
 and need nothing special.
 
 - Custom XDG roots and relocated Science data directories are not supported.
@@ -98,7 +98,7 @@ npm run check:release
 npm run test:integration  # Offline: temporary HOME, copied package, real deployment path
 ```
 
-`npm run check:package` validates the exact `npm pack --dry-run` surface: the four accepted runtime modules, the file allowlist, and the absence of secrets, state, authentication, session dumps, logs and binaries. `check:release` runs the same checks plus `node --check` on the entrypoints. The integration test needs no Magpie, Claude Science or network access.
+`npm run check:package` validates the exact `npm pack --dry-run` surface: the accepted runtime module, the file allowlist, and the absence of secrets, state, authentication, session dumps, logs and binaries. `check:release` runs the same checks plus `node --check` on the entrypoints. The integration test needs no Magpie, Claude Science or network access.
 
 CI tests Node 22/24 on Linux/macOS, the packed/deployed CLI and a pinned Magpie version. Release Please prepares a version and [CHANGELOG](CHANGELOG.md) PR from conventional commits. You review and merge it; the same workflow creates a GitHub Release, tests that exact commit and waits for `npm` environment approval before publishing through OIDC. Manual tag dispatch remains available for recovery. See [release setup (中文)](docs/publishing.md).
 

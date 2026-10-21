@@ -2,9 +2,9 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 process.env.MAGPIE_SCIENCE_BRIDGE_LOG='/dev/null';
-const {createBridge, validateConfig, buildCatalog, upstreamModel}=await import('../src/bridge.js');
+const {createBridge, validateConfig, buildCatalog, upstreamModel, aliasOf}=await import('../src/bridge.js');
 
-const config={model:'codex/gpt-6-luna',gateway:'http://127.0.0.1:3425',key:'magpie-claude-science',token:'test-local-only'};
+const config={model:'codex/gpt-6-luna',gateway:'http://127.0.0.1:3425',key:'magpie-claude-science',token:'test-local-only',claude:'gtt-claude/claude-tui'};
 const FRAME='7133cf97b33d444c91010589a074dff9';
 const meta={user_id:JSON.stringify({session_id:FRAME,frame_id:FRAME})};
 const magpieModels=[
@@ -25,19 +25,29 @@ test('only loopback Magpie endpoints and real upstream model ids are accepted',(
 test('the catalog is all of Magpie, Claude TUI models under their Claude names',()=>{
   const cat=buildCatalog(magpieModels,config);
   const ids=cat.data.map(m=>m.id);
-  assert.deepEqual(ids,['claude-opus-5-5','claude-haiku-4-5-20251001','ntt-claude/claude-tui/claude-opus-5-5','deepseek/deepseek-flash']);
+  assert.deepEqual(ids,['claude-opus-5-5','claude-haiku-4-5-20251001',aliasOf('ntt-claude/claude-tui/claude-opus-5-5'),aliasOf('deepseek/deepseek-flash')]);
+  assert.match(ids[3],/^claude-x-deepseek-deepseek-flash-[0-9a-f]{6}$/);
   assert.equal(cat.data[0].max_input_tokens,1000000);
   assert.equal(cat.data[0].max_tokens,128000);
   assert.match(cat.data[0].display_name,/TUI/);
   assert.equal(cat.data[3].display_name,'DeepSeek Flash · deepseek');
+  assert.equal(cat.data[2].display_name,'claude-opus-5-5 · ntt-claude','a slug name would be hidden by Science');
+  // Science drops ids not starting with claude- and names that are slugs.
+  for(const m of cat.data){assert.match(m.id,/^claude-/i);assert.doesNotMatch(m.display_name,/^[a-z][a-z0-9]*(?:-[a-z0-9]+)+$/);}
   assert.ok(buildCatalog([],config).data.length>0,'an unreachable catalog still offers a Claude model');
+  const local=buildCatalog([{id:'claude-tui/claude-opus-5-5',display_name:'Claude Opus 5.5'},{id:'deepseek/deepseek-flash'}],{...config,claude:undefined});
+  assert.deepEqual(local.data.map(m=>m.id),['claude-opus-5-5',aliasOf('deepseek/deepseek-flash')],'a local Claude TUI plugin is found under its bare provider id');
 });
 
 test('Claude names run on the configured Claude TUI provider, other ids unchanged',()=>{
   assert.equal(upstreamModel('claude-opus-5-5',config),'gtt-claude/claude-tui/claude-opus-5-5');
+  assert.equal(upstreamModel('claude-opus-5-5',{...config,claude:undefined}),'claude-tui/claude-opus-5-5','default: the Claude TUI plugin on this Magpie');
   assert.equal(upstreamModel('claude-haiku-4-5-20251001',{...config,claude:'gtt-claude/claude-tui-canary'}),'gtt-claude/claude-tui-canary/claude-haiku-4-5-20251001');
   assert.equal(upstreamModel('deepseek/deepseek-flash',config),'deepseek/deepseek-flash');
   assert.equal(upstreamModel('claude-magpie-8635646829',config),'claude-magpie-8635646829','Magpie aliases pass through');
+  const ids=magpieModels.map(m=>m.id);
+  assert.equal(upstreamModel(aliasOf('deepseek/deepseek-flash'),config,ids),'deepseek/deepseek-flash');
+  assert.equal(upstreamModel('claude-x-gone-abcdef',config,ids),null);
 });
 
 async function harness(handler){
@@ -70,7 +80,11 @@ test('relays streaming and counting with the conversation identity, nothing else
     assert.equal((await fetch(h.base+'/arbitrary',{headers:h.headers})).status,404);
     const listed=await (await fetch(h.base+'/v1/models',{headers:h.headers})).json();
     assert.equal(listed.data[0].id,'claude-opus-5-5');
-    assert.equal((await fetch(h.base+'/v1/models/deepseek%2Fdeepseek-flash',{headers:h.headers})).status,200);
+    assert.equal((await fetch(h.base+'/v1/models/'+aliasOf('deepseek/deepseek-flash'),{headers:h.headers})).status,200);
+    const viaAlias=await fetch(h.base+'/v1/messages/count_tokens',{method:'POST',headers:h.headers,body:JSON.stringify({model:aliasOf('deepseek/deepseek-flash'),messages:[{role:'user',content:'hi'}]})});
+    assert.equal(viaAlias.status,200);await viaAlias.text();
+    assert.equal(h.seen.at(-1).body.model,'deepseek/deepseek-flash','an alias runs on the Magpie model it names');
+    assert.equal((await fetch(h.base+'/v1/messages',{method:'POST',headers:h.headers,body:JSON.stringify({model:'claude-x-gone-abcdef',messages:[]})})).status,404);
     const body={model:'claude-opus-5-5',stream:true,metadata:meta,messages:[{role:'user',content:'hello'}],tools:[{name:'calculate',input_schema:{type:'object'}}]};
     const res=await fetch(h.base+'/v1/messages',{method:'POST',headers:{...h.headers,'anthropic-beta':'b1'},body:JSON.stringify(body)});
     assert.equal(res.status,200);const txt=await res.text();

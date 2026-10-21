@@ -5,7 +5,7 @@ import net from 'node:net';
 export const help = `Usage: magpie-claude-science <install|upgrade|rollback|doctor|restart|uninstall> [options]
   --model <catalog-id>      Magpie model (required for unattended first install)
   --gateway <loopback-url>  Defaults to Magpie settings port, then 3425
-  --claude <provider>       Magpie provider for Science's Claude models (default gtt-claude/claude-tui)
+  --claude <provider>       Magpie provider for Science's Claude models (default claude-tui; a remote one is e.g. my-vps/claude-tui)
   --magpie <executable>     Also MAGPIE_BIN, PATH, or the macOS app
   --science <executable>    Also SCIENCE_BIN, PATH, or the installed runtime/app
   --science-port <port> --preview-port <port> --bridge-port <port>
