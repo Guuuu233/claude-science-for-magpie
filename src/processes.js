@@ -4,7 +4,7 @@ import fs from 'node:fs';
 // Only exact Science executable names count: the plugin installer itself
 // runs under node with "magpie-claude-science" in argv and must not match.
 // Use comm rather than argv to avoid scanning or logging user conversations.
-export function activeSciencePids(run = spawnSync) {
+function pidsNamed(names, run) {
   const result = run('/bin/ps', ['-axo', 'pid=,comm='], {encoding:'utf8',timeout:2500});
   if (result.error || result.status !== 0 || typeof result.stdout !== 'string' || !result.stdout.trim())
     throw Error('Cannot inspect running Science processes; automatic setup refused');
@@ -12,10 +12,17 @@ export function activeSciencePids(run = spawnSync) {
   for (const line of result.stdout.split('\n')) {
     const found = line.match(/^\s*(\d+)\s+(.*?)\s*$/);
     if (!found) continue;
-    const exe = found[2].split('/').at(-1);
-    if (exe === 'ClaudeScience' || exe === 'claude-science') pids.push(Number(found[1]));
+    if (names.includes(found[2].split('/').at(-1))) pids.push(Number(found[1]));
   }
   return pids;
+}
+export function activeSciencePids(run = spawnSync) {
+  return pidsNamed(['ClaudeScience', 'claude-science'], run);
+}
+// The Science window only: the managed daemon (claude-science) runs while
+// the integration is installed, so it alone does not mean someone is working.
+export function scienceAppPids(run = spawnSync) {
+  return pidsNamed(['ClaudeScience'], run);
 }
 
 // PID alone is not ownership: include the kernel's start time and full argv.

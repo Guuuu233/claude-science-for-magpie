@@ -15,7 +15,9 @@
 
 需要 **macOS**、官方发行的 **Node.js 22+**、已经安装的 **Claude Science.app** 及能正常调用模型的 Magpie。本插件自动配置的是**本地兼容服务**，不会下载或分发 Claude Science 官方程序。
 
-**一键安装（从 v0.2.1 起）：** 在 **Magpie → 插件 → 发现 → GitHub 非官方插件** 中找到 **Guuuu233/magpie-claude-science**，点击安装并启用。如果暂时未出现在发现页，也可以在 Magpie 插件页使用手动 GitHub 地址 `github:Guuuu233/magpie-claude-science#v0.2.1` 安装。仓库发布 v0.2.1 并添加 `magpie-plugin` GitHub Topic 后才会进入 GitHub 发现列表。首次启用时自动选定 Magpie 中的模型、部署本地接入服务和 LaunchAgent；已有托管安装**不会被静默覆盖**。完成后重开 Science；若失败，查看 `~/.config/magpie/claude-science-runtime/autoinstall.log`。
+**一键安装（从 v0.2.1 起）：** 在 **Magpie → 插件 → 发现 → GitHub 非官方插件** 中找到 **Guuuu233/magpie-claude-science**，点击安装并启用。如果发现页里没有，也可以在 Magpie 插件页手动填写 GitHub 地址 `github:Guuuu233/magpie-claude-science` 安装。不要加 `#标签`：标签不会移动，Magpie 就永远不会提示更新。首次启用时自动选定 Magpie 中的模型、部署本地接入服务和 LaunchAgent。完成后重开 Science；若失败，查看 `~/.config/magpie/claude-science-runtime/autoinstall.log`。
+
+**更新（从 v0.2.2 起）：** 主分支发布新版本后，Magpie 的 **插件** 页会提示更新（也可运行 `magpie plugin update`）。插件更新后，只在 Science 空闲时替换本地服务：Science 窗口已关闭、没有进行中的模型请求、且最近 10 分钟没有请求。否则每 5 分钟再检查一次，绝不打断正在运行的任务。更新保留会话、登录状态和 `science.toml` 里的设置，新服务启动失败时自动恢复旧服务；过程记录在 `autoinstall.log`。用 Release 软件包或源码目录安装的不会自动更新，请在该目录运行 `node src/cli.js upgrade`。
 
 **启用前请注意：** 请先正常退出 Claude Science.app 和正在运行的 `claude-science` 后台进程。只要检测到 Science 仍在运行，自动初始化就会**跳过安装，不会停止现有科研任务**，并将原因记录到 `~/.config/magpie/claude-science-runtime/autoinstall.log`；退出 Science 后，在 Magpie 插件页禁用再启用即可重试。插件会验证 **Node.js ≥22**，同时兼容桌面环境 PATH 较短时常见的 nvm、asdf、mise、Volta 安装。首次无人值守安装优先选择可用的 `claude-tui/claude-opus-*`，其次是其他 TUI 模型或列表首个模型；**安装后请到 Magpie 的 Agent 页面确认、按需调整模型。**
 

@@ -16,7 +16,7 @@ export const distributionFiles = new Set([
   'docs/operations.zh-CN.md','docs/publishing.md',
   'src/agent.js','src/bridge.js','src/cli.js','src/config.js','src/deployment.js',
   'src/files.js','src/icon.js','src/middleware.js','src/plugin-identity.js',
-  'src/processes.js','src/runtime.js','src/setup.js','src/ticket.js','src/plugin.js',
+  'src/processes.js','src/runtime.js','src/setup.js','src/ticket.js','src/plugin.js','src/update.js',
 ]);
 
 // The local runtime is the bridge alone: a relay with no sibling modules.

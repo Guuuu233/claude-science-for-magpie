@@ -1,5 +1,21 @@
 # 更新日志 / Changelog
 
+## 0.2.2 (2026-10-22)
+
+### 变更 / Changes
+
+- Magpie 插件页「更新」后，本地服务跟着更新：插件比较自身代码与已部署副本，在 Science 空闲时（窗口关闭、无进行中请求、10 分钟内无请求）后台执行 `autoupgrade`；忙时每 5 分钟重试，切换前再查一次，不打断任务。复用 `upgrade` 路径：保留会话、认证与 `science.toml`，失败回滚。
+- 桥接服务在 `status.json` 中报告进行中请求数与最近一次请求时间。
+- `upgrade` 保留从 Magpie 插件页安装的 GitHub 条目，并接受 Magpie 对 `plugins.json` 的自身改写（条目仍在且启用时）；此前会把该条目换成本地路径。
+- 安装说明改为 `github:Guuuu233/magpie-claude-science`（不带标签），使 Magpie 能提示更新。
+
+## 0.2.1 (2026-10-22)
+
+### 变更 / Changes
+
+- Magpie 插件页一键安装：首次启用时自动部署本地服务；Science 运行中则跳过、不停止任何进程；探测 Node.js 22+（nvm/asdf/mise/Volta）。
+- 升级与回退保留用户在 `science.toml` 中添加的设置（如 `[sandbox]`、`[memory]`）。
+
 ## 0.2.0 (2026-10-22)
 
 ### 变更 / Changes

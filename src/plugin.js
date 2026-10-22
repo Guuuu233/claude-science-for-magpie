@@ -1,11 +1,13 @@
 // Magpie's Bun plugin-host entrypoint. Not the Science background daemon.
-// A GitHub plugin install opts in to this local-only, once-per-install setup.
+// A GitHub plugin install opts in to this local-only setup, and to updating
+// the local service when Magpie updates the plugin.
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {spawn, spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {activeSciencePids} from './processes.js';
+import {activeSciencePids,scienceAppPids} from './processes.js';
+import {updateNeeded,busyReason} from './update.js';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
@@ -42,16 +44,22 @@ function localNode(env = process.env, home = os.homedir(), probe = spawnSync) {
   throw Error('Node.js 22+ not found (also checked nvm/asdf/mise/Volta); install Node.js 22+ and re-enable this plugin.');
 }
 
-function launchSetup({env = process.env, home = os.homedir(), platform = process.platform, spawnProcess = spawn, nodeResolver = localNode, findScience = activeSciencePids} = {}) {
+function launchSetup({env = process.env, home = os.homedir(), platform = process.platform, spawnProcess = spawn, nodeResolver = localNode, findScience = activeSciencePids, findApp = scienceAppPids, project = root} = {}) {
   if (env.MAGPIE_SCIENCE_DISABLE_AUTOINSTALL === '1') return {launched: false, reason: 'disabled in isolated test'};
   if (platform !== 'darwin') return {launched: false, reason: 'macOS required'};
   const stateDir = path.join(home, '.config', 'magpie', 'claude-science-runtime');
   const stateFile = path.join(stateDir, 'state.json');
+  let command = 'autoinstall';
   if (fs.existsSync(stateFile)) {
-    // The setup daemon must never silently replace or upgrade a configured installation.
-    return {launched: false, reason: 'existing Science state requires explicit management'};
+    // An installation made from Magpie Plugins follows the plugin's updates,
+    // but only while Science is idle; anything else is managed explicitly.
+    const state = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+    if (!updateNeeded(state, project)) return {launched: false, reason: 'existing Science state is current or managed explicitly'};
+    const busy = busyReason(state, {findApp});
+    if (busy) return {launched: false, retry: true, reason: 'Science update waits: ' + busy};
+    command = 'autoupgrade';
   }
-  const running = findScience();
+  const running = command === 'autoinstall' ? findScience() : [];
   if (running.length) {
     const note = 'Claude Science is running; automatic setup skipped to protect active tasks. Quit Science and re-enable the plugin.';
     fs.mkdirSync(stateDir,{recursive:true,mode:0o700});
@@ -86,12 +94,12 @@ function launchSetup({env = process.env, home = os.homedir(), platform = process
   try {
     const log = fs.openSync(logFile, 'a', 0o600);
     try {
-      const child = spawnProcess(node, [path.join(root, 'src', 'cli.js'), 'autoinstall'], {
-        cwd: root, env: {...env, HOME: home}, detached: true,
+      const child = spawnProcess(node, [path.join(project, 'src', 'cli.js'), command], {
+        cwd: project, env: {...env, HOME: home}, detached: true,
         stdio: ['ignore', log, log],
       });
       child.unref?.();
-      return {launched: true, reason: 'installation started'};
+      return {launched: true, reason: command === 'autoupgrade' ? 'update started' : 'installation started'};
     } finally {
       fs.closeSync(log);
     }
@@ -104,13 +112,23 @@ function launchSetup({env = process.env, home = os.homedir(), platform = process
 // Magpie discovers this entry from package.json's main field. Export one
 // plugin function only: importing the background daemon directly used to
 // make Magpie call runRuntime() with plugin input and fail on missing state.
+const RETRY_MS = 5 * 60 * 1000;
 export const ScienceSetupPlugin = async ({client} = {}) => {
-  try {
-    const result = launchSetup();
-    if (result.launched) client?.app?.log?.({service: 'claude-science', level: 'info', message: 'Local Science setup started; reopen Science after completion.'});
-    else if (result.reason.includes('Science is running')) client?.app?.log?.({service:'claude-science',level:'warn',message:result.reason});
-  } catch (error) {
-    client?.app?.log?.({service: 'claude-science', level: 'error', message: 'Automatic Science setup unavailable: ' + String(error.message).slice(0, 180)});
+  const attempt = () => {
+    try {
+      const result = launchSetup();
+      if (result.launched) client?.app?.log?.({service: 'claude-science', level: 'info', message: result.reason === 'update started' ? 'Local Science service is updating; it is back in about a minute.' : 'Local Science setup started; reopen Science after completion.'});
+      else if (result.reason.includes('Science is running')) client?.app?.log?.({service:'claude-science',level:'warn',message:result.reason});
+      return result.retry === true;
+    } catch (error) {
+      client?.app?.log?.({service: 'claude-science', level: 'error', message: 'Automatic Science setup unavailable: ' + String(error.message).slice(0, 180)});
+      return false;
+    }
+  };
+  // A pending update is tried again while this host runs, never mid-task.
+  if (attempt()) {
+    const timer = setInterval(() => { if (!attempt()) clearInterval(timer); }, RETRY_MS);
+    timer.unref?.();
   }
   return {};
 };

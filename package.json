@@ -1,6 +1,6 @@
 {
   "name": "magpie-claude-science",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Claude Science local bridge: Magpie-discoverable agent with automatic macOS setup",
   "keywords": [
     "magpie-plugin",

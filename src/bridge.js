@@ -104,7 +104,7 @@ export function sessionLabel(body){
 const PASS_HEADERS=['content-type','retry-after','x-should-retry','request-id','anthropic-ratelimit-unified-reset','anthropic-ratelimit-unified-status'];
 
 export function createBridge(readConfig) {
-  let cached=null;
+  let cached=null,inFlight=0,lastActivityAt=null;
   async function models(c){
     if(cached&&cached.gateway===c.gateway&&Date.now()-cached.at<60000)return cached.models;
     // Unauthenticated, Magpie lists its models under their own ids.
@@ -117,10 +117,12 @@ export function createBridge(readConfig) {
   async function catalog(c){
     try{return buildCatalog(await models(c),c);}catch(e){log({catalogError:String(e.message||e)});return buildCatalog([],c);}
   }
-  return http.createServer(async(req,res)=>{
+  const server=http.createServer(async(req,res)=>{
     const startedAt=Date.now();
     const abort=new AbortController();
-    res.on('close',()=>{if(!res.writableEnded)abort.abort();});
+    // A request still open means Science is working: an update waits for it.
+    inFlight++;lastActivityAt=new Date(startedAt).toISOString();
+    res.on('close',()=>{inFlight--;lastActivityAt=new Date().toISOString();if(!res.writableEnded)abort.abort();});
     let entry=null;
     try{
       const c=validateConfig(readConfig());
@@ -178,4 +180,6 @@ export function createBridge(readConfig) {
       else if(!res.destroyed)res.destroy();
     }
   });
+  server.activity=()=>({inFlight,lastActivityAt});
+  return server;
 }

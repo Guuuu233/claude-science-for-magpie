@@ -67,8 +67,8 @@ const js=staged.filter(file=>file.endsWith('.js'));
 const mjs=staged.filter(file=>file.endsWith('.mjs'));
 // The runtime is the bridge alone.
 const runtime=['bridge.js'];
-assert.equal(staged.length,14,`expected 14 staged src files, got ${staged.length}: ${staged.join(', ')}`);
-assert.equal(js.length,14,`expected 14 staged .js files, got ${js.length}`);
+assert.equal(staged.length,15,`expected 15 staged src files, got ${staged.length}: ${staged.join(', ')}`);
+assert.equal(js.length,15,`expected 15 staged .js files, got ${js.length}`);
 assert.equal(mjs.length,0,`expected no .mjs files, got ${mjs.length}`);
 for(const file of runtime)assert.ok(staged.includes(file),'missing runtime module after staging: '+file);
 for(const file of mjs)assert.ok(staged.includes(file),'missing .mjs after staging: '+file);

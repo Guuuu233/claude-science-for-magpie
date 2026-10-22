@@ -119,7 +119,7 @@ export async function runRuntime(state,{pollMs=2000,startTimeoutMs=600000,stopTi
     }
     if(child&&child.exitCode===null&&child.signalCode===null){
       let changed=true;try{changed=stamp(state.binary)!==binaryStamp;}catch{}
-      status({state:'running',sciencePid:child.pid,scienceIdentity:lease?.identity,scienceVersion,model:c.model,bridgePort:state.bridgePort,sciencePort:state.sciencePort,restartRequired:changed,
+      status({state:'running',sciencePid:child.pid,scienceIdentity:lease?.identity,scienceVersion,model:c.model,bridgePort:state.bridgePort,sciencePort:state.sciencePort,bridge:bridge.activity(),restartRequired:changed,
         ...(changed?{notice:'Science executable changed. Finish current tasks and restart the integration.'}:{})});return;
     }
     if(child){await stopChild();restore();}

@@ -9,7 +9,8 @@ import {createInterface} from 'node:readline/promises';
 import {enabledSciencePlugins} from './plugin-identity.js';
 import {makeTicket} from './ticket.js';
 import {adoptManaged,managedWrite,restoreAll} from './files.js';
-import {activeSciencePids} from './processes.js';
+import {activeSciencePids,scienceAppPids} from './processes.js';
+import {updateNeeded,busyReason} from './update.js';
 import {scienceConfig,checkOriginalConfig,launchPlist,label} from './setup.js';
 import {parseArgs,help,resolveGateway,selectModel,discoverBinary,reservePorts} from './config.js';
 import {stageDeployment,verifyDeployment,validateNodeLibraries} from './deployment.js';
@@ -25,7 +26,7 @@ export function createInstaller(deps={}) {
   const stateFile=path.join(root,'state.json'),privateJournal=path.join(root,'private-journal.json'),installJournal=path.join(root,'install-journal.json');
   const plist=path.join(home,'Library','LaunchAgents',label+'.plist'),domain=`gui/${process.getuid?.()??0}`;
   const run=deps.run||defaultRun,fetcher=deps.fetch||fetch,log=deps.log||console.log;
-  const findScience=deps.findScience||activeSciencePids;
+  const findScience=deps.findScience||activeSciencePids,findApp=deps.findApp||scienceAppPids;
   const save=(file,content)=>managedWrite(file,content,privateJournal);
   const ownedManager=state=>{const status=json(state.statusFile);if(!status?.pid)return false;const command=run('/bin/ps',['-p',String(status.pid),'-o','command='],true).stdout||'';return command.includes(path.join(state.pluginSpec||state.project,'src','runtime.js'))&&command.includes(stateFile);};
   const stop=deps.stopService|| (async state=>{
@@ -79,7 +80,7 @@ export function createInstaller(deps={}) {
     const catalogModels=(await catalog.json()).data||[];
     const chooseModel=options.auto?async ids=>ids.find(id=>/claude-tui\/claude-opus/.test(id))||ids.find(id=>id.includes('claude-tui/'))||ids[0]:choose;
     const model=await selectModel({models:catalogModels,requested:options.model,previous:previousModel,choose:chooseModel});
-    const magpie=options.auto?undefined:discoverBinary('magpie',{explicit:options.magpie||previous?.magpie,env,home});
+    const magpie=options.auto?undefined:options.whenIdle?previous?.magpie:discoverBinary('magpie',{explicit:options.magpie||previous?.magpie,env,home});
     const binary=discoverBinary('science',{explicit:options.science||previous?.binary,env,home});
     const registry=options.auto?json(path.join(configRoot,'plugins.json')):null;
     const installedSource=options.auto?enabledSciencePlugins(registry).find(x=>/^(?:github:)?Guuuu233\/magpie-claude-science(?:#.*)?$/.test(x.spec)||/^https:\/\/github.com\/Guuuu233\/magpie-claude-science(?:\.git)?(?:#.*)?$/.test(x.spec)):undefined;
@@ -98,6 +99,12 @@ export function createInstaller(deps={}) {
     checkOriginalConfig(baseline,originalDir);
     const registryBefore=json(path.join(configRoot,'plugins.json'));
     const enabledBefore=enabledSciencePlugins(registryBefore,[previous?.pluginSpec,previous?.project]);
+    // Magpie rewrites plugins.json itself (plugin updates, other plugins).
+    // While the entry this install came from is still enabled, keep it and
+    // accept the registry as it is now; a replaced entry is still drift.
+    const keptSource=!installedSource&&enabledSciencePlugins(registryBefore).find(x=>x.spec===previous?.registrySpec);
+    if(keptSource)adoptManaged(path.join(configRoot,'plugins.json'),privateJournal);
+    if(options.whenIdle&&!options.whenIdle())throw Error('Science became busy; update postponed. No process was stopped.');
     if(previous)await stop(previous);
     let reserved,switched=false;
     try{
@@ -121,7 +128,7 @@ export function createInstaller(deps={}) {
       if(userScience)adoptManaged(state.scienceConfig,privateJournal);
       save(state.scienceConfig,scienceConfig(userScience||baseline,{data:state.data,auth:state.auth,port:state.sciencePort,sandboxPort:state.sandboxPort}));
       save(stateFile,JSON.stringify(state,null,2));switched=true;
-      select(state,installedSource?.spec);
+      select(state,installedSource?.spec||keptSource?.spec);
       // Do not issue a stop command on behalf of an unattended plugin
       // activation, even if a Science process starts between preflights.
       if(!previous&&!options.auto)run(binary,['stop','--data-dir',originalDir]);
@@ -173,6 +180,11 @@ export function createInstaller(deps={}) {
       if(options.command==='autoinstall'){
         if(state?.installed){log('Science integration already installed; leaving existing user configuration unchanged.');return;}
         return await install({...options,auto:true,command:'install'},state);
+      }
+      if(options.command==='autoupgrade'){
+        if(!updateNeeded(state,project)){log('Science integration is up to date.');return;}
+        const busy=busyReason(state,{findApp});if(busy){log('Science update postponed: '+busy);return;}
+        return await install({command:'upgrade',whenIdle:()=>!busyReason(state,{findApp})},state);
       }
       if(['install','upgrade','rollback'].includes(options.command))return await install(options,state);
       if(!state){log('Not installed.');return;}

@@ -73,6 +73,8 @@ Science 会列出 Magpie 模型目录中的全部模型：Claude TUI 模型以 C
 首次登录的实机验收必须使用独立的 HOME、数据目录和新生成的本地身份，并在无痕窗口或无原有登录状态的独立浏览器会话中打开该测试实例生成的一次性登录链接。确认 Sign in 后进入工作区，而非账号登录页；不能仅检查已有会话或 `/health`。同时检查只安装 Magpie 插件时的初始化提示。测试结束停止测试进程，不清除用户浏览器 Cookie 或真实会话。
 
 
-## Magpie 插件页自动初始化（候选 v0.2.1）
+## Magpie 插件页自动初始化与更新
 
-通过 Magpie 的 GitHub 插件入口安装并启用本分支后，插件尝试初始化本机接入服务。请先退出 Claude Science.app；检测到任何 Science 前台/后台进程时，为保护正在运行的科研任务，安装器不执行停止操作，而是记录原因并等待下次插件启用。需要 Node.js 22+；完成安装后应检查 Agent 页默认选中的模型。此候选版还未公开发布或完成真实 Science UI 验收。
+通过 Magpie 的 GitHub 插件入口（`github:Guuuu233/magpie-claude-science`，不带 `#标签`）安装并启用本分支后，插件尝试初始化本机接入服务。请先退出 Claude Science.app；检测到任何 Science 前台/后台进程时，为保护正在运行的科研任务，安装器不执行停止操作，而是记录原因并等待下次插件启用。需要 Node.js 22+；完成安装后应检查 Agent 页默认选中的模型。
+
+v0.2.2 起，Magpie 更新插件后，插件比较自身代码（`src/` 与 `package.json`）和已部署副本的清单；不一致且 Science 空闲（窗口 `ClaudeScience` 未运行、桥接服务无进行中请求、最近 10 分钟无请求）时，在后台执行 `cli.js autoupgrade`，走与 `upgrade` 相同的路径（保留 `science.toml`、会话与认证，失败回滚）。忙时宿主每 5 分钟重试；切换前再检查一次，变忙则放弃本次、不停止任何进程。只有 `registrySpec` 是 GitHub/npm 插件地址的安装会自动更新；从源码目录或 Release 包安装的仍需手动 `upgrade`。日志：`~/.config/magpie/claude-science-runtime/autoinstall.log`。
