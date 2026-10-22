@@ -4,7 +4,7 @@
 
 推荐从 Magpie 插件页安装（`github:Guuuu233/claude-science-for-magpie`，不带 `#标签`），首次启用时自动初始化，见文末「Magpie 插件页自动初始化与更新」。插件已添加不等于初始化已完成：结果以 `autoinstall.log` 和 `doctor` 为准。
 
-终端安装：使用官方 Node.js 22/24，从[本分支 v0.2.5 GitHub Release](https://github.com/Guuuu233/claude-science-for-magpie/releases/tag/v0.2.5) 下载并解压 `claude-science-for-magpie-0.2.5.tgz`，在解压后的 `package/` 中执行 `npm install --omit=dev --ignore-scripts` 和 `node src/cli.js install`（或者克隆本仓库，在源码目录运行 `npm ci --ignore-scripts` 后安装），从现有模型中选择。非交互安装必须提供 `--model`；升级优先保留已选模型。
+终端安装：使用官方 Node.js 22/24，从[本分支 v0.2.6 GitHub Release](https://github.com/Guuuu233/claude-science-for-magpie/releases/tag/v0.2.6) 下载并解压 `claude-science-for-magpie-0.2.6.tgz`，在解压后的 `package/` 中执行 `npm install --omit=dev --ignore-scripts` 和 `node src/cli.js install`（或者克隆本仓库，在源码目录运行 `npm ci --ignore-scripts` 后安装），从现有模型中选择。非交互安装必须提供 `--model`；升级优先保留已选模型。
 
 插件安装的版本里没有源码目录，管理命令在已安装版本中运行：
 
@@ -35,6 +35,7 @@ R=~/.config/magpie/claude-science-runtime; P=$(node -p "require('$R/state.json')
 `~/.config/magpie/claude-science-runtime/` 包含：
 
 - `releases/<hash>/`：运行代码、生产依赖、Node 副本与校验清单。
+- `science.toml`：Science 配置。插件默认写入 `[cache_keepalive] enabled = false`（关闭缓存保温：经 Claude TUI 时每次保温都是一整轮原生回答并重写缓存），用户显式设置的值保留。
 - `data/`、`auth/`：独立 Science 会话和本地启动身份。`auth/encryption.key` 的四把密钥另有一份在 macOS 钥匙串（服务名 `com.anthropic.operon-cli`，账户 `encryption.key-<密钥文件路径 SHA-256 前 12 位>`），Science 以钥匙串为准，两者不一致时用钥匙串覆盖文件、把文件原内容移入 `auth/.key-backups/`。
 - `state.json`：当前版本、上一个版本、端口和配置；包含本地令牌，不要公开。
 - `status.json`、`service.log`、`science.log`：状态与诊断；日志可能包含会话内容。

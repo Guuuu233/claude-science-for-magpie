@@ -1,5 +1,11 @@
 # 更新日志 / Changelog
 
+## 0.2.6 (2026-10-22)
+
+### 变更 / Changes
+
+- 默认关闭 Science 的缓存保温（`[cache_keepalive] enabled = false`，用户自己设置过的保持不变）。Science 每轮回答后约 4.5 分钟会用 `max_tokens: 1` 重发整段对话，为 Anthropic 的 5 分钟缓存保温，90 秒没结果就放弃；经 Claude TUI 时每次保温都是一整轮原生 Claude Code 回答，还会触发会话重建、整段重写缓存，而 Claude Code 本身就按 1 小时缓存。v0.2.5 的诊断日志确认：请求内容本身每轮都没有变化，缓存未命中主要来自这些保温请求。
+
 ## 0.2.5 (2026-10-22)
 
 ### 变更 / Changes

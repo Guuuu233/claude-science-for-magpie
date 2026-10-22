@@ -15,3 +15,11 @@ test('configuration refuses relocated Science installations until explicitly han
   assert.throws(()=>api.checkOriginalConfig('data_dir="/different"','/home/.claude-science'),/relocat/i);
   assert.doesNotThrow(()=>api.checkOriginalConfig('','/home/.claude-science'));
 });
+test('cache keep-warm pings are off unless the user chose otherwise',()=>{
+  const off=parse(api.scienceConfig('',{data:'/d',auth:'/a',port:1}));
+  assert.equal(off.cache_keepalive.enabled,false);
+  const kept=parse(api.scienceConfig('[cache_keepalive]\nenabled=true\ninterval_s=200\n',{data:'/d',auth:'/a',port:1}));
+  assert.deepEqual({...kept.cache_keepalive},{enabled:true,interval_s:200});
+  const tuned=parse(api.scienceConfig('[cache_keepalive]\ninterval_s=200\n',{data:'/d',auth:'/a',port:1}));
+  assert.deepEqual({...tuned.cache_keepalive},{interval_s:200,enabled:false});
+});

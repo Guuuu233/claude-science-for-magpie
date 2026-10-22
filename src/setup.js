@@ -9,6 +9,11 @@ export function scienceConfig(text,{data,auth,port}){
   const c=parse(text||'');
   c.data_dir=data;c.port=port;c.default_model='claude-opus-5-5';c.disable_telemetry=true;
   c.paths={...c.paths,auth_dir:auth};
+  // Science keeps Anthropic's 5-minute prompt cache warm by re-sending the
+  // conversation with max_tokens 1. Through Claude TUI each such ping is a
+  // whole native turn (and a session rebuild), and Claude Code already caches
+  // for an hour: off unless the user set it.
+  if(c.cache_keepalive?.enabled===undefined)c.cache_keepalive={...c.cache_keepalive,enabled:false};
   return '# Managed by magpie-claude-science; uninstall restores the original file.\n'+stringify(c);
 }
 const xml=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
