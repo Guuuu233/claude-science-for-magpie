@@ -15,7 +15,7 @@ const keys = {'--model':'model','--gateway':'gateway','--claude':'claude','--mag
 export function parseArgs(args) {
   if(args.includes('--help') || args.includes('-h')) return {command:'help'};
   const result={command:args[0]||'help'};
-  if(!['help','install','upgrade','rollback','doctor','restart','uninstall'].includes(result.command))throw Error('Unknown command: '+result.command);
+  if(!['help','install','autoinstall','upgrade','rollback','doctor','restart','uninstall'].includes(result.command))throw Error('Unknown command: '+result.command);
   for(let i=1;i<args.length;i++) {
     const key=keys[args[i]];if(!key)throw Error('Unknown option: '+args[i]);
     const value=args[++i];if(!value||value.startsWith('--'))throw Error('Missing value for '+args[i-1]);

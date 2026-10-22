@@ -1,6 +1,23 @@
 import {spawnSync} from 'node:child_process';
 import fs from 'node:fs';
 
+// Only exact Science executable names count: the plugin installer itself
+// runs under node with "magpie-claude-science" in argv and must not match.
+// Use comm rather than argv to avoid scanning or logging user conversations.
+export function activeSciencePids(run = spawnSync) {
+  const result = run('/bin/ps', ['-axo', 'pid=,comm='], {encoding:'utf8',timeout:2500});
+  if (result.error || result.status !== 0 || typeof result.stdout !== 'string' || !result.stdout.trim())
+    throw Error('Cannot inspect running Science processes; automatic setup refused');
+  const pids = [];
+  for (const line of result.stdout.split('\n')) {
+    const found = line.match(/^\s*(\d+)\s+(.*?)\s*$/);
+    if (!found) continue;
+    const exe = found[2].split('/').at(-1);
+    if (exe === 'ClaudeScience' || exe === 'claude-science') pids.push(Number(found[1]));
+  }
+  return pids;
+}
+
 // PID alone is not ownership: include the kernel's start time and full argv.
 export function readProcessIdentity(pid) {
   if(!Number.isSafeInteger(pid)||pid<=1)return null;

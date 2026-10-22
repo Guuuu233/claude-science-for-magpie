@@ -8,7 +8,8 @@ import {randomBytes} from 'node:crypto';
 import {createInterface} from 'node:readline/promises';
 import {enabledSciencePlugins} from './plugin-identity.js';
 import {makeTicket} from './ticket.js';
-import {managedWrite,restoreAll} from './files.js';
+import {adoptManaged,managedWrite,restoreAll} from './files.js';
+import {activeSciencePids} from './processes.js';
 import {scienceConfig,checkOriginalConfig,launchPlist,label} from './setup.js';
 import {parseArgs,help,resolveGateway,selectModel,discoverBinary,reservePorts} from './config.js';
 import {stageDeployment,verifyDeployment,validateNodeLibraries} from './deployment.js';
@@ -24,6 +25,7 @@ export function createInstaller(deps={}) {
   const stateFile=path.join(root,'state.json'),privateJournal=path.join(root,'private-journal.json'),installJournal=path.join(root,'install-journal.json');
   const plist=path.join(home,'Library','LaunchAgents',label+'.plist'),domain=`gui/${process.getuid?.()??0}`;
   const run=deps.run||defaultRun,fetcher=deps.fetch||fetch,log=deps.log||console.log;
+  const findScience=deps.findScience||activeSciencePids;
   const save=(file,content)=>managedWrite(file,content,privateJournal);
   const ownedManager=state=>{const status=json(state.statusFile);if(!status?.pid)return false;const command=run('/bin/ps',['-p',String(status.pid),'-o','command='],true).stdout||'';return command.includes(path.join(state.pluginSpec||state.project,'src','runtime.js'))&&command.includes(stateFile);};
   const stop=deps.stopService|| (async state=>{
@@ -42,8 +44,8 @@ export function createInstaller(deps={}) {
     throw Error('Managed Science startup failed (including possible port collision). Run doctor and inspect service.log.');
   });
   const choose=deps.choose||(process.stdin.isTTY&&process.stdout.isTTY?async ids=>{const rl=createInterface({input:process.stdin,output:process.stdout});try{ids.forEach((id,i)=>log(`${i+1}. ${id}`));const answer=await rl.question('Select model number or catalog ID: ');return ids[Number(answer)-1]||answer.trim();}finally{rl.close();}}:undefined);
-  function select(state){
-    const spec=state.pluginSpec||state.project, file=state.pluginsFile;
+  function select(state,autoSource){
+    const spec=autoSource||state.pluginSpec||state.project, file=state.pluginsFile;
     const registry=json(file)||{plugins:[]};
     if(!Array.isArray(registry.plugins))throw Error('Invalid Magpie plugin registry');
     // The Magpie 0.1.1285 CLI regularly times out after 45 s. Updating
@@ -66,6 +68,7 @@ export function createInstaller(deps={}) {
   async function install(options,previous){
     if(options.command==='install'&&previous&&previous.installed!==false)throw Error('Already prepared. Use upgrade, restart, or uninstall.');
     if(options.command!=='install'&&!previous)throw Error('Not installed. Use install first.');
+    if(options.auto&&findScience().length)throw Error('Claude Science is running. Quit Science and re-enable the Magpie plugin before automatic setup. No process was stopped.');
     const gatewayOverride=options.gateway!==undefined||previous?.gatewayOverride===true;
     const claude=options.claude??previous?.claude;
     if(claude!==undefined&&!/^[-\w.]+(\/[-\w.]+)*$/.test(claude))throw Error('Invalid --claude provider: '+claude);
@@ -73,8 +76,16 @@ export function createInstaller(deps={}) {
     const response=await fetcher(gateway+'/api/hello',{signal:AbortSignal.timeout(3000)});if(!response.ok||(await response.json()).name!=='magpie')throw Error('Start Magpie before installing');
     const catalog=await fetcher(gateway+'/v1/models',{signal:AbortSignal.timeout(5000)});if(!catalog.ok)throw Error('Cannot read Magpie model catalog');
     const previousModel=json(previous?.agentConfig||path.join(configRoot,'claude-science.json'))?.model||previous?.model;
-    const model=await selectModel({models:(await catalog.json()).data||[],requested:options.model,previous:previousModel,choose});
-    const magpie=discoverBinary('magpie',{explicit:options.magpie||previous?.magpie,env,home}),binary=discoverBinary('science',{explicit:options.science||previous?.binary,env,home});
+    const catalogModels=(await catalog.json()).data||[];
+    const chooseModel=options.auto?async ids=>ids.find(id=>/claude-tui\/claude-opus/.test(id))||ids.find(id=>id.includes('claude-tui/'))||ids[0]:choose;
+    const model=await selectModel({models:catalogModels,requested:options.model,previous:previousModel,choose:chooseModel});
+    const magpie=options.auto?undefined:discoverBinary('magpie',{explicit:options.magpie||previous?.magpie,env,home});
+    const binary=discoverBinary('science',{explicit:options.science||previous?.binary,env,home});
+    const registry=options.auto?json(path.join(configRoot,'plugins.json')):null;
+    const installedSource=options.auto?enabledSciencePlugins(registry).find(x=>/^(?:github:)?Guuuu233\/magpie-claude-science(?:#.*)?$/.test(x.spec)||/^https:\/\/github.com\/Guuuu233\/magpie-claude-science(?:\.git)?(?:#.*)?$/.test(x.spec)):undefined;
+    if(options.auto&&!installedSource)throw Error('Install this community fork through Magpie Plugins before automatic setup');
+    if(options.auto&&enabledSciencePlugins(registry).some(x=>x.spec!==installedSource.spec&&x.options?.agent==='claude-science'))
+      throw Error('Another Science integration is already enabled; refusing automatic replacement');
     let deployment;
     if(options.command==='rollback'){deployment=previous.previousDeployment;if(!deployment)throw Error('No previous deployment available');verifyDeployment(deployment);}
     else deployment=stageDeployment({project,root,node:deps.node||process.execPath});
@@ -91,7 +102,12 @@ export function createInstaller(deps={}) {
     let reserved,switched=false;
     try{
       reserved=await reservePorts(options,previous||undefined);
-      const state={...(previous||{}),installed:true,project:deployment.path,pluginSpec:deployment.path,node:deployment.node,deployment,
+      if(options.auto&&findScience().length)
+        throw Error('Claude Science started while preparing setup. Quit Science and re-enable the Magpie plugin; no process was stopped.');
+      // Runtime and launchd require an actual, checksummed filesystem path.
+      // The Magpie-facing installedSource spec remains in plugins.json only.
+        const state={...(previous||{}),installed:true,project:deployment.path,pluginSpec:deployment.path,
+          registrySpec:installedSource?.spec||previous?.registrySpec||deployment.path,node:deployment.node,deployment,
         previousDeployment:previous?.deployment&&previous.deployment.id!==deployment.id?previous.deployment:previous?.previousDeployment,
         magpie,binary,model,gateway,gatewayOverride,...(claude?{claude}:{}),originalDir,originalConfig,
         agentConfig:path.join(configRoot,'claude-science.json'),pluginsFile:path.join(configRoot,'plugins.json'),
@@ -99,10 +115,16 @@ export function createInstaller(deps={}) {
         data:previous?.data||path.join(root,'data'),auth:previous?.auth||path.join(root,'auth'),token:previous?.token||randomBytes(32).toString('hex'),...reserved.ports};
       if(!previous||previous.installed===false)save(path.join(root,'original-config.txt'),baseline);
       if(!previous){const t=makeTicket(undefined,state.token);save(path.join(state.auth,'encryption.key'),Object.entries(t.keys).map(([k,v])=>`${k}=${v}`).join('\n')+'\n');save(path.join(state.auth,'.oauth-tokens',t.account+'.enc'),t.encrypted);}
-      save(state.scienceConfig,scienceConfig(baseline,{data:state.data,auth:state.auth,port:state.sciencePort,sandboxPort:state.sandboxPort}));
+      // science.toml is also the user's Science config (e.g. [sandbox], [memory]):
+      // rebuild from it so their additions survive upgrade and rollback.
+      const userScience=previous&&previous.installed!==false?oldScience:'';
+      if(userScience)adoptManaged(state.scienceConfig,privateJournal);
+      save(state.scienceConfig,scienceConfig(userScience||baseline,{data:state.data,auth:state.auth,port:state.sciencePort,sandboxPort:state.sandboxPort}));
       save(stateFile,JSON.stringify(state,null,2));switched=true;
-      select(state);
-      if(!previous)run(binary,['stop','--data-dir',originalDir]);
+      select(state,installedSource?.spec);
+      // Do not issue a stop command on behalf of an unattended plugin
+      // activation, even if a Science process starts between preflights.
+      if(!previous&&!options.auto)run(binary,['stop','--data-dir',originalDir]);
       await reserved.release();reserved=null;
       launch(state);await healthy(state);
       log(`${options.command==='rollback'?'Rolled back':previous?'Upgraded':'Installed'}. Model: ${model}. Open the original Claude Science app.`);
@@ -129,7 +151,7 @@ export function createInstaller(deps={}) {
   async function execute(options){
     if(options.command==='help'){log(help);return;}
     if(options.command==='doctor'){
-      const state=json(stateFile);if(!state){log('Local Science service is not initialized. Installing the plugin in Magpie alone does not complete setup.\nKeep Magpie running, then run: npx magpie-claude-science@latest install\nAfter setup succeeds, reopen Claude Science.');return;}
+      const state=json(stateFile);if(!state){log('Local Science is not initialized. Install/enable the GitHub community fork from Magpie Plugins for automatic setup; alternatively install this fork from its GitHub Release.');return;}
       log(`Runtime: ${state.pluginSpec||state.project}\nModel: ${json(state.agentConfig)?.model||state.model||'(disconnected)'}\nGateway: ${state.gateway||'legacy'}\nService: ${read(state.statusFile)||'(no status)'}\nPrivate logs: ${root}`);
       if(state.deployment){try{verifyDeployment(state.deployment);log('Deployment checksums: OK');}catch(e){log(e.message);}}
       return;
@@ -148,13 +170,17 @@ export function createInstaller(deps={}) {
       fs.writeFileSync(fd,JSON.stringify({pid:process.pid,startedAt:new Date().toISOString()}));
       managedWrite(path.join(root,'owner.json'),'{"application":"magpie-claude-science"}\n',privateJournal);
       const state=json(stateFile);
+      if(options.command==='autoinstall'){
+        if(state?.installed){log('Science integration already installed; leaving existing user configuration unchanged.');return;}
+        return await install({...options,auto:true,command:'install'},state);
+      }
       if(['install','upgrade','rollback'].includes(options.command))return await install(options,state);
       if(!state){log('Not installed.');return;}
       if(options.command==='restart'){if(state.deployment)verifyDeployment(state.deployment);await stop(state);launch({...state,node:state.node||process.execPath});await healthy(state);log('Restarted.');return;}
       if(options.command==='uninstall'){
         await stop(state);const restored=restoreAll(state.configJournal),pl=restoreAll(installJournal);
         if(restored.conflicts.length||pl.conflicts.length)throw Error('User edits preserved; resolve restore conflicts in journals before removing integration.');
-        const magpie=discoverBinary('magpie',{explicit:options.magpie||state.magpie,env,home});run(magpie,['claude-science','default']);run(magpie,['plugin','rm',state.pluginSpec||state.project]);
+        const magpie=discoverBinary('magpie',{explicit:options.magpie||state.magpie,env,home});run(magpie,['claude-science','default']);run(magpie,['plugin','rm',state.registrySpec||state.pluginSpec||state.project]);
         save(stateFile,JSON.stringify({...state,installed:false},null,2));log('Uninstalled. Sessions and authentication retained at '+state.data);return;
       }
       throw Error('Unknown command: '+options.command);

@@ -2,9 +2,9 @@
 
 ## 安装与配置
 
-使用官方 Node.js 22/24，启动 Magpie 后执行 `npx magpie-claude-science@latest install`（源码目录中可用 `node src/cli.js install`），从现有模型中选择。非交互安装必须提供 `--model`；升级优先保留已选模型。仅在 Magpie 中添加插件不等于完成系统服务初始化。
+使用官方 Node.js 22/24，从[本分支 v0.2.0 GitHub Release](https://github.com/Guuuu233/magpie-claude-science/releases/tag/v0.2.0) 下载并解压 `magpie-claude-science-0.2.0.tgz`，在解压后的 `package/` 中执行 `npm install --omit=dev --ignore-scripts` 和 `node src/cli.js install`（或者克隆本仓库，在源码目录运行 `npm ci --ignore-scripts` 后安装），从现有模型中选择。非交互安装必须提供 `--model`；升级优先保留已选模型。仅在 Magpie 中添加插件不等于完成系统服务初始化。
 
-若首次 Sign in 后出现 `Sign in on the web` / `Paste code instead`，先执行 `npx magpie-claude-science@latest doctor`。未初始化时执行 `install`，成功后重新打开原 App，并关闭旧登录页；已初始化时核对服务状态和 `sciencePort`。不要将重新登录 Anthropic 作为接入步骤。
+若首次 Sign in 后出现 `Sign in on the web` / `Paste code instead`，先在本分支 Release 的 `package/` 或源码目录执行 `node src/cli.js doctor`。未初始化时执行 `install`，成功后重新打开原 App，并关闭旧登录页；已初始化时核对服务状态和 `sciencePort`。不要将重新登录 Anthropic 作为接入步骤。
 
 可用选项：
 
@@ -71,3 +71,8 @@ Science 会列出 Magpie 模型目录中的全部模型：Claude TUI 模型以 C
 本地验证：`npm test`、`npm run check:package`、`npm run test:integration`。GitHub CI 执行同类检查；它使用模拟 Science，不下载或运行用户的真实科研数据。
 
 首次登录的实机验收必须使用独立的 HOME、数据目录和新生成的本地身份，并在无痕窗口或无原有登录状态的独立浏览器会话中打开该测试实例生成的一次性登录链接。确认 Sign in 后进入工作区，而非账号登录页；不能仅检查已有会话或 `/health`。同时检查只安装 Magpie 插件时的初始化提示。测试结束停止测试进程，不清除用户浏览器 Cookie 或真实会话。
+
+
+## Magpie 插件页自动初始化（候选 v0.2.1）
+
+通过 Magpie 的 GitHub 插件入口安装并启用本分支后，插件尝试初始化本机接入服务。请先退出 Claude Science.app；检测到任何 Science 前台/后台进程时，为保护正在运行的科研任务，安装器不执行停止操作，而是记录原因并等待下次插件启用。需要 Node.js 22+；完成安装后应检查 Agent 页默认选中的模型。此候选版还未公开发布或完成真实 Science UI 验收。

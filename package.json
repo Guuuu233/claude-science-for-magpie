@@ -1,7 +1,15 @@
 {
   "name": "magpie-claude-science",
-  "version": "0.2.0",
-  "description": "Magpie Agent and middleware with an explicit local service installer for Claude Science",
+  "version": "0.2.1",
+  "description": "Claude Science local bridge: Magpie-discoverable agent with automatic macOS setup",
+  "keywords": [
+    "magpie-plugin",
+    "opencode",
+    "opencode-plugin",
+    "agent",
+    "claude-science",
+    "local-bridge"
+  ],
   "type": "module",
   "scripts": {
     "test": "node --test test/*.test.mjs",
@@ -50,5 +58,5 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "main": "./src/runtime.js"
+  "main": "./src/plugin.js"
 }

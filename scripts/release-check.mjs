@@ -16,7 +16,7 @@ export const distributionFiles = new Set([
   'docs/operations.zh-CN.md','docs/publishing.md',
   'src/agent.js','src/bridge.js','src/cli.js','src/config.js','src/deployment.js',
   'src/files.js','src/icon.js','src/middleware.js','src/plugin-identity.js',
-  'src/processes.js','src/runtime.js','src/setup.js','src/ticket.js',
+  'src/processes.js','src/runtime.js','src/setup.js','src/ticket.js','src/plugin.js',
 ]);
 
 // The local runtime is the bridge alone: a relay with no sibling modules.
@@ -91,7 +91,7 @@ export function validateDistribution(manifest, files, root, {syntax = false} = {
   assert.equal(manifest.private, undefined, 'Package must be public');
   assert.equal(manifest.repository?.url, `git+https://github.com/${repository}.git`);
   assert.equal(manifest.bin?.['magpie-claude-science'], 'src/cli.js');
-  assert.equal(manifest.main, './src/runtime.js');
+  assert.equal(manifest.main, './src/plugin.js');
   assert.ok(manifest.files?.includes('src/*.mjs'), 'package.json files must include src/*.mjs');
   assert.ok(manifest.magpie?.agent === './src/agent.js' && manifest.magpie?.middleware === './src/middleware.js',
     'Magpie agent/middleware entrypoints changed');
@@ -118,12 +118,12 @@ export function validateDistribution(manifest, files, root, {syntax = false} = {
 
   for (const file of runtimeModules) assert.ok(seen.has(file), `Missing accepted runtime module: ${file}`);
   for (const file of ['package.json','README.md','README.zh-CN.md','CHANGELOG.md','LICENSE',
-    'docs/operations.zh-CN.md','docs/publishing.md','src/cli.js','src/runtime.js','src/agent.js','src/middleware.js']) {
+    'docs/operations.zh-CN.md','docs/publishing.md','src/cli.js','src/runtime.js','src/plugin.js','src/agent.js','src/middleware.js']) {
     assert.ok(seen.has(file), `Missing package file: ${file}`);
   }
 
   if (syntax) {
-    const entrypoints = ['src/cli.js','src/runtime.js','src/bridge.js','src/deployment.js','src/agent.js','src/middleware.js',
+    const entrypoints = ['src/cli.js','src/runtime.js','src/plugin.js','src/bridge.js','src/deployment.js','src/agent.js','src/middleware.js',
       ...runtimeModules.filter(file => file.endsWith('.mjs'))];
     for (const file of [...new Set(entrypoints)]) {
       execFileSync(process.execPath, ['--check', path.join(root, file)], {cwd: root, stdio: 'pipe'});

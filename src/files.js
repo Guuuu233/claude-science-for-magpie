@@ -142,6 +142,19 @@ export function managedWrite(file, content, journalPath) {
   saveJournal(journalPath, journal);
 }
 
+// For a managed file the user may also edit: accept its current content as
+// managed, keeping the recorded original for uninstall.
+export function adoptManaged(file, journalPath) {
+  absolute(file); absolute(journalPath);
+  const journal = loadJournal(journalPath);
+  const entry = journal.entries.find(item => item.file === file);
+  const current = snapshot(file);
+  if (!entry || !current.exists) return;
+  entry.writtenHash = digest(Buffer.from(current.data, 'base64'));
+  entry.plannedHash = null;
+  saveJournal(journalPath, journal);
+}
+
 export function restoreAll(journalPath) {
   const journal = loadJournal(journalPath);
   const result = { restored: [], conflicts: [] };
