@@ -53,7 +53,8 @@ test('automatic installer refuses to replace a different active Science plugin',
     fs.mkdirSync(path.dirname(registry),{recursive:true});
     fs.writeFileSync(registry,JSON.stringify({plugins:[{spec:'github:Guuuu233/magpie-claude-science'},{spec:'github:shiyang1026/magpie-claude-science',options:{agent:'claude-science'}}]}));
     const before=fs.readFileSync(registry,'utf8');
-    const cli=createInstaller({home,platform:'darwin',findScience:()=>[],fetch:async url=>({ok:true,json:async()=>url.endsWith('/api/hello')?{name:'magpie'}:{data:[{id:'claude-tui/claude-opus-5-5'}]}})});
+    const binary=path.join(home,'fake-bin');fs.writeFileSync(binary,'fake',{mode:0o700});
+    const cli=createInstaller({home,platform:'darwin',env:{SCIENCE_BIN:binary},findScience:()=>[],fetch:async url=>({ok:true,json:async()=>url.endsWith('/api/hello')?{name:'magpie'}:{data:[{id:'claude-tui/claude-opus-5-5'}]}})});
     await assert.rejects(cli.execute({command:'autoinstall'}),/Another Science integration/);
     assert.equal(fs.readFileSync(registry,'utf8'),before);
     assert.ok(!fs.existsSync(cli.stateFile));
@@ -65,7 +66,7 @@ test('CLI unattended install independently refuses a live Science before any wri
   const home=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'science-busy-cli-')));
   try {
     const calls=[];
-    const cli=createInstaller({home,platform:'darwin',findScience:()=>[96667],
+    const cli=createInstaller({home,platform:'darwin',env:{},findScience:()=>[96667],
       run:(binary,args)=>{calls.push([binary,...args]);return {status:0,stdout:''};},
       fetch:async()=>{throw Error('must not connect to gateway');}});
     await assert.rejects(cli.execute({command:'autoinstall'}),/Quit Science and re-enable/);
