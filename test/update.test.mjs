@@ -10,7 +10,7 @@ const {_internal}=await import('../src/plugin.js');
 const {createInstaller}=await import('../src/cli.js');
 const {createBridge}=await import('../src/bridge.js');
 
-const github='github:Guuuu233/magpie-claude-science';
+const github='github:Guuuu233/claude-science-for-magpie';
 function tmp(t,name){const dir=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),name)));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));return dir;}
 function source(home){
   const dir=path.join(home,'source');fs.mkdirSync(path.join(dir,'src'),{recursive:true});
@@ -44,6 +44,7 @@ test('only a Magpie Plugins install whose own code changed needs an update',asyn
   fs.appendFileSync(path.join(project,'src','runtime.js'),'//two');
   assert.equal(updateNeeded(state,project),true);
   fs.writeFileSync(path.join(project,'src','added.js'),'//new');
+  assert.equal(updateNeeded({...state,registrySpec:'github:Guuuu233/magpie-claude-science'},project),true,'an install from before the rename still follows the plugin');
   assert.equal(updateNeeded({...state,registrySpec:state.deployment.path},project),false,'a local-checkout install is managed by its owner');
   assert.equal(updateNeeded({...state,installed:false},project),false);
 });

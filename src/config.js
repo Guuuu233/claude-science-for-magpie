@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import net from 'node:net';
 
-export const help = `Usage: magpie-claude-science <install|upgrade|rollback|doctor|restart|uninstall> [options]
+export const help = `Usage: claude-science-for-magpie <install|upgrade|rollback|doctor|restart|uninstall> [options]
   --model <catalog-id>      Magpie model (required for unattended first install)
   --gateway <loopback-url>  Defaults to Magpie settings port, then 3425
   --claude <provider>       Magpie provider for Science's Claude models (default claude-tui; a remote one is e.g. my-vps/claude-tui)

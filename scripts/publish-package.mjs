@@ -8,7 +8,7 @@ import {pathToFileURL} from 'node:url';
 export async function publishPackage({tarball,manifest,fetchImpl=fetch,
   runPublish=file=>execFileSync('npm',['publish',file,'--access','public','--provenance','--ignore-scripts','--registry=https://registry.npmjs.org'],{stdio:'inherit',timeout:120000}),
   sleep=ms=>new Promise(r=>setTimeout(r,ms)),polls=30,intervalMs=10000}){
-  assert.equal(manifest.name,'magpie-claude-science');
+  assert.equal(manifest.name,'claude-science-for-magpie');
   assert.match(manifest.version,/^\d+\.\d+\.\d+$/);
   const file=path.resolve(tarball);
   const expected='sha512-'+createHash('sha512').update(fs.readFileSync(file)).digest('base64');

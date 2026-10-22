@@ -1,5 +1,11 @@
 # 更新日志 / Changelog
 
+## 0.2.4 (2026-10-22)
+
+### 变更 / Changes
+
+- 包名与仓库名改为 `claude-science-for-magpie`（GitHub `Guuuu233/claude-science-for-magpie`），与插件名称 Claude Science for Magpie 一致；命令行入口同名。用旧地址 `github:Guuuu233/magpie-claude-science` 安装的经 GitHub 跳转照常更新，插件仍认作同一个接入。
+
 ## 0.2.3 (2026-10-22)
 
 ### 变更 / Changes

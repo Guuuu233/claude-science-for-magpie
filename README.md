@@ -4,8 +4,8 @@
 
 English · [简体中文](README.zh-CN.md)
 
-[![CI](https://github.com/Guuuu233/magpie-claude-science/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Guuuu233/magpie-claude-science/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/Guuuu233/magpie-claude-science)](https://github.com/Guuuu233/magpie-claude-science/releases)
+[![CI](https://github.com/Guuuu233/claude-science-for-magpie/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Guuuu233/claude-science-for-magpie/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Guuuu233/claude-science-for-magpie)](https://github.com/Guuuu233/claude-science-for-magpie/releases)
 
 Use Magpie's models in the Claude Science app, keeping the original macOS app and icon. Install **Claude Science for Magpie** from **Magpie → Plugins**: local setup runs by itself, and later plugin updates are applied while Science is idle. Then pick models under **Magpie → Agents → Claude Science for Magpie** and open Science as usual.
 
@@ -16,7 +16,7 @@ Use Magpie's models in the Claude Science app, keeping the original macOS app an
 Requires **macOS**, an official Node.js **22+**, the installed **Claude Science.app**, and a working Magpie gateway with at least one model. The plugin sets up the local bridge, **not Claude Science itself**.
 
 1. **Quit Claude Science** — the window and any `claude-science` background process. Setup never stops a running Science: if one is running it skips and notes why in `~/.config/magpie/claude-science-runtime/autoinstall.log`; quit Science, then turn the plugin off and on again.
-2. **Install the plugin.** In **Magpie → Plugins → Discover → Unofficial, on GitHub**, find **Guuuu233/magpie-claude-science** and install it, or add `github:Guuuu233/magpie-claude-science` in Magpie's manual GitHub installer. Leave out a `#tag`: a tag never moves, so Magpie would never offer an update.
+2. **Install the plugin.** In **Magpie → Plugins → Discover → Unofficial, on GitHub**, find **Guuuu233/claude-science-for-magpie** and install it, or add `github:Guuuu233/claude-science-for-magpie` in Magpie's manual GitHub installer. Leave out a `#tag`: a tag never moves, so Magpie would never offer an update. (The repository was called `Guuuu233/magpie-claude-science` before v0.2.4; installs from that address keep updating through GitHub's redirect.)
 3. **Open Claude Science.app** once setup has finished. The first “Sign in” confirms a local browser session, not an Anthropic login. Setup picks a `claude-tui/claude-opus-*` model when there is one, otherwise another Claude TUI model or the first enabled model: **review it on Magpie's Agents page.** If something fails, read `autoinstall.log`.
 
 Setup checks for Node.js 22+ (including nvm, asdf, mise and Volta installs that the desktop app's short PATH misses), copies its runtime, production dependencies and Node into a private release directory, and runs it as a macOS LaunchAgent; the service does not depend on the plugin folder. Node builds linked to external libraries, such as some Homebrew builds, are refused.
@@ -33,7 +33,7 @@ To manage the installation yourself, start Magpie, finish active Science tasks a
 
 ```sh
 mkdir -p claude-science-for-magpie && cd claude-science-for-magpie
-curl -fL https://github.com/Guuuu233/magpie-claude-science/releases/download/v0.2.3/magpie-claude-science-0.2.3.tgz -o science.tgz
+curl -fL https://github.com/Guuuu233/claude-science-for-magpie/releases/download/v0.2.4/claude-science-for-magpie-0.2.4.tgz -o science.tgz
 tar -xzf science.tgz
 cd package
 npm install --omit=dev --ignore-scripts
@@ -43,8 +43,8 @@ node src/cli.js install
 Or from the source tag:
 
 ```sh
-git clone --branch v0.2.3 --depth 1 https://github.com/Guuuu233/magpie-claude-science.git
-cd magpie-claude-science
+git clone --branch v0.2.4 --depth 1 https://github.com/Guuuu233/claude-science-for-magpie.git
+cd claude-science-for-magpie
 npm ci --ignore-scripts
 node src/cli.js install
 ```
@@ -112,7 +112,7 @@ npm run test:integration  # Offline: temporary HOME, copied package, real deploy
 
 CI validates the package and integration paths. Releases are tagged on main and published as reviewed GitHub release assets; main is kept at the latest release, which is what Magpie installs and updates to. There is no npm publishing; the upstream npm name belongs to its original maintainer. See [publishing policy](docs/publishing.md).
 
-Report bugs through [Issues](https://github.com/Guuuu233/magpie-claude-science/issues), including versions, `doctor` output and reproduction steps. Omit credentials and private logs. See [operations (中文)](docs/operations.zh-CN.md) and [Magpie's guide](https://usemagpie.ai/docs/plugins).
+Report bugs through [Issues](https://github.com/Guuuu233/claude-science-for-magpie/issues), including versions, `doctor` output and reproduction steps. Omit credentials and private logs. See [operations (中文)](docs/operations.zh-CN.md) and [Magpie's guide](https://usemagpie.ai/docs/plugins).
 
 ## License
 

@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateRelease, validatePackage } from '../scripts/release-check.mjs';
-const manifest = { name: 'magpie-claude-science', version: '0.1.0', repository: { url: 'git+https://github.com/Guuuu233/magpie-claude-science.git' }, bin: { 'magpie-claude-science': 'src/cli.js' } };
-const context = { event: 'workflow_dispatch', repository: 'Guuuu233/magpie-claude-science', ref: 'refs/tags/v0.1.0', sha: 'a'.repeat(40), head: 'a'.repeat(40), tagCommit: 'a'.repeat(40), dirty: '' };
+const manifest = { name: 'claude-science-for-magpie', version: '0.1.0', repository: { url: 'git+https://github.com/Guuuu233/claude-science-for-magpie.git' }, bin: { 'claude-science-for-magpie': 'src/cli.js' } };
+const context = { event: 'workflow_dispatch', repository: 'Guuuu233/claude-science-for-magpie', ref: 'refs/tags/v0.1.0', sha: 'a'.repeat(40), head: 'a'.repeat(40), tagCommit: 'a'.repeat(40), dirty: '' };
 test('release accepts only manually selected matching tag and checkout', () => {
  assert.doesNotThrow(() => validateRelease(manifest, context));
  for (const change of [{event:'push'}, {repository:'other/fork'}, {ref:'refs/heads/main'}, {ref:'refs/tags/v0.2.0'}, {head:'b'.repeat(40)}, {tagCommit:'b'.repeat(40)}, {dirty:' M src/cli.js'}]) assert.throws(() => validateRelease(manifest, {...context,...change}));

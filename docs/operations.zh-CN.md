@@ -2,9 +2,9 @@
 
 ## 安装与配置
 
-推荐从 Magpie 插件页安装（`github:Guuuu233/magpie-claude-science`，不带 `#标签`），首次启用时自动初始化，见文末「Magpie 插件页自动初始化与更新」。插件已添加不等于初始化已完成：结果以 `autoinstall.log` 和 `doctor` 为准。
+推荐从 Magpie 插件页安装（`github:Guuuu233/claude-science-for-magpie`，不带 `#标签`），首次启用时自动初始化，见文末「Magpie 插件页自动初始化与更新」。插件已添加不等于初始化已完成：结果以 `autoinstall.log` 和 `doctor` 为准。
 
-终端安装：使用官方 Node.js 22/24，从[本分支 v0.2.3 GitHub Release](https://github.com/Guuuu233/magpie-claude-science/releases/tag/v0.2.3) 下载并解压 `magpie-claude-science-0.2.3.tgz`，在解压后的 `package/` 中执行 `npm install --omit=dev --ignore-scripts` 和 `node src/cli.js install`（或者克隆本仓库，在源码目录运行 `npm ci --ignore-scripts` 后安装），从现有模型中选择。非交互安装必须提供 `--model`；升级优先保留已选模型。
+终端安装：使用官方 Node.js 22/24，从[本分支 v0.2.4 GitHub Release](https://github.com/Guuuu233/claude-science-for-magpie/releases/tag/v0.2.4) 下载并解压 `claude-science-for-magpie-0.2.4.tgz`，在解压后的 `package/` 中执行 `npm install --omit=dev --ignore-scripts` 和 `node src/cli.js install`（或者克隆本仓库，在源码目录运行 `npm ci --ignore-scripts` 后安装），从现有模型中选择。非交互安装必须提供 `--model`；升级优先保留已选模型。
 
 插件安装的版本里没有源码目录，管理命令在已安装版本中运行：
 
@@ -86,6 +86,6 @@ Science 会列出 Magpie 模型目录中的全部模型：Claude TUI 模型以 C
 
 ## Magpie 插件页自动初始化与更新
 
-通过 Magpie 的 GitHub 插件入口（`github:Guuuu233/magpie-claude-science`，不带 `#标签`）安装并启用本分支后，插件尝试初始化本机接入服务。请先退出 Claude Science.app；检测到任何 Science 前台/后台进程时，为保护正在运行的科研任务，安装器不执行停止操作，而是记录原因并等待下次插件启用。需要 Node.js 22+；完成安装后应检查 Agent 页默认选中的模型。
+通过 Magpie 的 GitHub 插件入口（`github:Guuuu233/claude-science-for-magpie`，不带 `#标签`）安装并启用本分支后，插件尝试初始化本机接入服务。请先退出 Claude Science.app；检测到任何 Science 前台/后台进程时，为保护正在运行的科研任务，安装器不执行停止操作，而是记录原因并等待下次插件启用。需要 Node.js 22+；完成安装后应检查 Agent 页默认选中的模型。
 
 v0.2.2 起，Magpie 更新插件后，插件比较自身代码（`src/` 与 `package.json`）和已部署副本的清单；不一致且 Science 空闲（窗口 `ClaudeScience` 未运行、桥接服务无进行中请求、最近 10 分钟无请求）时，在后台执行 `cli.js autoupgrade`，走与 `upgrade` 相同的路径（保留 `science.toml`、会话与认证，失败回滚）。忙时宿主每 5 分钟重试；切换前再检查一次，变忙则放弃本次、不停止任何进程。只有 `registrySpec` 是 GitHub/npm 插件地址的安装会自动更新；从源码目录或 Release 包安装的仍需手动 `upgrade`。日志：`~/.config/magpie/claude-science-runtime/autoinstall.log`。

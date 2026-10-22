@@ -2,7 +2,7 @@ import {spawnSync} from 'node:child_process';
 import fs from 'node:fs';
 
 // Only exact Science executable names count: the plugin installer itself
-// runs under node with "magpie-claude-science" in argv and must not match.
+// runs under node with the package name in argv and must not match.
 // Use comm rather than argv to avoid scanning or logging user conversations.
 function pidsNamed(names, run) {
   const result = run('/bin/ps', ['-axo', 'pid=,comm='], {encoding:'utf8',timeout:2500});

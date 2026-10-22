@@ -83,7 +83,7 @@ export function createInstaller(deps={}) {
     const magpie=options.auto?undefined:options.whenIdle?previous?.magpie:discoverBinary('magpie',{explicit:options.magpie||previous?.magpie,env,home});
     const binary=discoverBinary('science',{explicit:options.science||previous?.binary,env,home});
     const registry=options.auto?json(path.join(configRoot,'plugins.json')):null;
-    const installedSource=options.auto?enabledSciencePlugins(registry).find(x=>/^(?:github:)?Guuuu233\/magpie-claude-science(?:#.*)?$/.test(x.spec)||/^https:\/\/github.com\/Guuuu233\/magpie-claude-science(?:\.git)?(?:#.*)?$/.test(x.spec)):undefined;
+    const installedSource=options.auto?enabledSciencePlugins(registry).find(x=>/^(?:github:)?Guuuu233\/(?:claude-science-for-magpie|magpie-claude-science)(?:#.*)?$/.test(x.spec)||/^https:\/\/github.com\/Guuuu233\/(?:claude-science-for-magpie|magpie-claude-science)(?:\.git)?(?:#.*)?$/.test(x.spec)):undefined;
     if(options.auto&&!installedSource)throw Error('Install this community fork through Magpie Plugins before automatic setup');
     if(options.auto&&enabledSciencePlugins(registry).some(x=>x.spec!==installedSource.spec&&x.options?.agent==='claude-science'))
       throw Error('Another Science integration is already enabled; refusing automatic replacement');

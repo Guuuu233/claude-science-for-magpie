@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import {createHash} from 'node:crypto';
 const api=await import('../scripts/publish-package.mjs').catch(()=>({}));
-const manifest={name:'magpie-claude-science',version:'0.1.0'};
+const manifest={name:'claude-science-for-magpie',version:'0.1.0'};
 function fixture(){const root=fs.mkdtempSync(path.join(os.tmpdir(),'npm-publish-'));const tarball=path.join(root,'release.tgz');fs.writeFileSync(tarball,'verified artifact');return{root,tarball,meta:{...manifest,dist:{integrity:'sha512-'+createHash('sha512').update('verified artifact').digest('base64')}}};}
 const response=metadata=>metadata?{status:200,ok:true,json:async()=>metadata}:{status:404,ok:false};
 test('already published identical artifact is a no-op',async()=>{

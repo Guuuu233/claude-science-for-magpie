@@ -4,8 +4,8 @@
 
 [English](README.md) · 简体中文
 
-[![CI](https://github.com/Guuuu233/magpie-claude-science/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Guuuu233/magpie-claude-science/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/Guuuu233/magpie-claude-science)](https://github.com/Guuuu233/magpie-claude-science/releases)
+[![CI](https://github.com/Guuuu233/claude-science-for-magpie/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Guuuu233/claude-science-for-magpie/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Guuuu233/claude-science-for-magpie)](https://github.com/Guuuu233/claude-science-for-magpie/releases)
 
 在 Claude Science 中使用 Magpie 的模型，保留原来的 macOS App 和图标。在 **Magpie → 插件** 安装 **Claude Science for Magpie**：本地接入自动完成，之后的插件更新会在 Science 空闲时自动生效。在 **Magpie → Agent → Claude Science for Magpie** 中切换模型，照常打开 Science 即可。
 
@@ -16,7 +16,7 @@
 需要 **macOS**、官方发行的 **Node.js 22+**、已经安装的 **Claude Science.app** 及能正常调用模型的 Magpie。本插件配置的是**本地兼容服务**，不会下载或分发 Claude Science 官方程序。
 
 1. **先退出 Claude Science**：包括窗口和正在运行的 `claude-science` 后台进程。初始化绝不停止正在运行的 Science：检测到 Science 在运行就跳过，并把原因写进 `~/.config/magpie/claude-science-runtime/autoinstall.log`；退出 Science 后在插件页把插件关掉再打开即可重试。
-2. **安装插件。** 在 **Magpie → 插件 → 发现 → GitHub 非官方插件** 中找到 **Guuuu233/magpie-claude-science** 并安装；发现页里没有时，可以在插件页手动填写 `github:Guuuu233/magpie-claude-science`。不要加 `#标签`：标签不会移动，Magpie 就永远不会提示更新。
+2. **安装插件。** 在 **Magpie → 插件 → 发现 → GitHub 非官方插件** 中找到 **Guuuu233/claude-science-for-magpie** 并安装；发现页里没有时，可以在插件页手动填写 `github:Guuuu233/claude-science-for-magpie`。不要加 `#标签`：标签不会移动，Magpie 就永远不会提示更新。（v0.2.4 之前仓库名为 `Guuuu233/magpie-claude-science`，用旧地址安装的经 GitHub 自动跳转照常更新。）
 3. **初始化完成后打开 Claude Science.app。** 首次 “Sign in” 只确认本地浏览器会话，无需登录 Anthropic。初始化优先选择可用的 `claude-tui/claude-opus-*`，其次是其他 Claude TUI 模型或列表里第一个模型：**请到 Magpie 的 Agent 页面确认、按需调整。** 出问题时查看 `autoinstall.log`。
 
 初始化会验证 Node.js 22+（也会找到桌面环境 PATH 较短时漏掉的 nvm、asdf、mise、Volta 安装），把运行文件、生产依赖和 Node 复制到独立版本目录，以 macOS LaunchAgent 运行；后台服务不依赖插件目录。部分 Homebrew Node 依赖外部动态库，会被拒绝，需改用官方 Node。
@@ -33,7 +33,7 @@
 
 ```sh
 mkdir -p claude-science-for-magpie && cd claude-science-for-magpie
-curl -fL https://github.com/Guuuu233/magpie-claude-science/releases/download/v0.2.3/magpie-claude-science-0.2.3.tgz -o science.tgz
+curl -fL https://github.com/Guuuu233/claude-science-for-magpie/releases/download/v0.2.4/claude-science-for-magpie-0.2.4.tgz -o science.tgz
 tar -xzf science.tgz
 cd package
 npm install --omit=dev --ignore-scripts
@@ -43,8 +43,8 @@ node src/cli.js install
 或者从源码标签安装：
 
 ```sh
-git clone --branch v0.2.3 --depth 1 https://github.com/Guuuu233/magpie-claude-science.git
-cd magpie-claude-science
+git clone --branch v0.2.4 --depth 1 https://github.com/Guuuu233/claude-science-for-magpie.git
+cd claude-science-for-magpie
 npm ci --ignore-scripts
 node src/cli.js install
 ```
@@ -112,7 +112,7 @@ npm run test:integration  # 离线：临时 HOME、复制软件包并执行真�
 
 CI 负责检测安装包和集成兼容性。版本在主分支打标签，经人工审核后上传 GitHub Release 资产；主分支始终保持为最新正式版，Magpie 安装和更新的就是它。不发布 npm；原 npm 包名属于上游维护者。详见[发布政策](docs/publishing.md)。
 
-通过 [Issues](https://github.com/Guuuu233/magpie-claude-science/issues) 反馈问题，请附版本、`doctor` 输出和复现步骤，不要附带凭证或私人日志。更多内容：[运维说明](docs/operations.zh-CN.md)、[Magpie 文档](https://usemagpie.ai/docs/zh/plugins)。
+通过 [Issues](https://github.com/Guuuu233/claude-science-for-magpie/issues) 反馈问题，请附版本、`doctor` 输出和复现步骤，不要附带凭证或私人日志。更多内容：[运维说明](docs/operations.zh-CN.md)、[Magpie 文档](https://usemagpie.ai/docs/zh/plugins)。
 
 ## 许可证
 

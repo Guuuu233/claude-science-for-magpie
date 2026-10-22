@@ -4,7 +4,7 @@ import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 
-export const repository = 'Guuuu233/magpie-claude-science';
+export const repository = 'Guuuu233/claude-science-for-magpie';
 
 // Files that the historical npm release was allowed to contain.
 const publicFiles = new Set(['package.json','README.md','README.zh-CN.md','CHANGELOG.md','LICENSE','docs/operations.zh-CN.md','docs/publishing.md']);
@@ -86,11 +86,11 @@ export function packedFiles(root = process.cwd()) {
  */
 export function validateDistribution(manifest, files, root, {syntax = false} = {}) {
   assert.ok(root, 'validateDistribution requires the package root');
-  assert.equal(manifest.name, 'magpie-claude-science');
+  assert.equal(manifest.name, 'claude-science-for-magpie');
   assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
   assert.equal(manifest.private, undefined, 'Package must be public');
   assert.equal(manifest.repository?.url, `git+https://github.com/${repository}.git`);
-  assert.equal(manifest.bin?.['magpie-claude-science'], 'src/cli.js');
+  assert.equal(manifest.bin?.['claude-science-for-magpie'], 'src/cli.js');
   assert.equal(manifest.main, './src/plugin.js');
   assert.ok(manifest.files?.includes('src/*.mjs'), 'package.json files must include src/*.mjs');
   assert.ok(manifest.magpie?.agent === './src/agent.js' && manifest.magpie?.middleware === './src/middleware.js',
@@ -133,11 +133,11 @@ export function validateDistribution(manifest, files, root, {syntax = false} = {
 }
 
 export function validatePackage(manifest, files) {
-  assert.equal(manifest.name, 'magpie-claude-science');
+  assert.equal(manifest.name, 'claude-science-for-magpie');
   assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
   assert.notEqual(manifest.private,true,'Package must be public');
   assert.equal(manifest.repository?.url, `git+https://github.com/${repository}.git`);
-  assert.equal(manifest.bin?.['magpie-claude-science'],'src/cli.js');
+  assert.equal(manifest.bin?.['claude-science-for-magpie'],'src/cli.js');
   for (const hook of ['preinstall','install','postinstall','prepare','prepack','postpack','prepublish','prepublishOnly','publish','postpublish']) assert.ok(!manifest.scripts?.[hook], `Forbidden lifecycle hook: ${hook}`);
   for (const file of files) assert.ok(publicFiles.has(file) || /^src\/[a-zA-Z0-9_-]+\.js$/.test(file), `Unexpected package file: ${file}`);
   for (const file of ['package.json','src/cli.js','src/agent.js','src/middleware.js','README.md','README.zh-CN.md','LICENSE']) assert.ok(files.includes(file), `Missing package file: ${file}`);

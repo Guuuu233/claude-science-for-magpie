@@ -1,6 +1,6 @@
 {
-  "name": "magpie-claude-science",
-  "version": "0.2.3",
+  "name": "claude-science-for-magpie",
+  "version": "0.2.4",
   "description": "Claude Science for Magpie: use Magpie's models in the Claude Science app, with one-click macOS setup and automatic updates",
   "keywords": [
     "magpie-plugin",
@@ -34,7 +34,7 @@
     "smol-toml": "1.9.1"
   },
   "bin": {
-    "magpie-claude-science": "src/cli.js"
+    "claude-science-for-magpie": "src/cli.js"
   },
   "files": [
     "src/*.js",
@@ -48,11 +48,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Guuuu233/magpie-claude-science.git"
+    "url": "git+https://github.com/Guuuu233/claude-science-for-magpie.git"
   },
-  "homepage": "https://github.com/Guuuu233/magpie-claude-science#readme",
+  "homepage": "https://github.com/Guuuu233/claude-science-for-magpie#readme",
   "bugs": {
-    "url": "https://github.com/Guuuu233/magpie-claude-science/issues"
+    "url": "https://github.com/Guuuu233/claude-science-for-magpie/issues"
   },
   "publishConfig": {
     "access": "public",

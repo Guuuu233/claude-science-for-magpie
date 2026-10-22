@@ -45,6 +45,21 @@ test('Magpie marketplace autoinstall preserves GitHub plugin identity and local 
     assert.ok(calls.some(([bin,...args])=>bin===binary&&args.join(' ')==='plugin rm '+spec),'uninstall must remove the GitHub registry spec rather than a staged filesystem path');
   }finally{fs.rmSync(home,{recursive:true,force:true});}
 });
+test('autoinstall accepts the renamed repository',async()=>{
+  const {createInstaller}=await import('../src/cli.js');
+  const home=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'science-renamed-')));
+  try{
+    const registry=path.join(home,'.config/magpie/plugins.json');
+    fs.mkdirSync(path.dirname(registry),{recursive:true});
+    const spec='github:Guuuu233/claude-science-for-magpie';
+    fs.writeFileSync(registry,JSON.stringify({plugins:[{spec}]}));
+    const binary=path.join(home,'fake-bin');fs.writeFileSync(binary,'fake',{mode:0o700});
+    const installer=createInstaller({home,platform:'darwin',node:binary,run:()=>({status:0,stdout:'',stderr:''}),findScience:()=>[],fetch:async url=>({ok:true,json:async()=>url.endsWith('/api/hello')?{name:'magpie'}:{data:[{id:'claude-tui/claude-opus-5-5'}]}}),stopService:async()=>{},waitHealthy:async()=>{},log:()=>{},env:{SCIENCE_BIN:binary}});
+    const state=await installer.execute({command:'autoinstall'});
+    assert.equal(state.registrySpec,spec);
+    assert.equal(JSON.parse(fs.readFileSync(registry)).plugins[0].options.agent,'claude-science');
+  }finally{fs.rmSync(home,{recursive:true,force:true});}
+});
 test('automatic installer refuses to replace a different active Science plugin',async()=>{
   const {createInstaller}=await import('../src/cli.js');
   const home=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'science-market-conflict-')));
