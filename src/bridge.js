@@ -101,10 +101,58 @@ export function sessionLabel(body){
   return lane&&lane.kind==='main'?'science-'+lane.frame:null;
 }
 
+// The Claude TUI runtime goes on in a conversation's native session only
+// while its system text, tools, tool choice and thinking stay the same and
+// the history only grows; otherwise it rebuilds the session, and the whole
+// prompt is cached again. Each conversation's request is logged against its
+// previous one as hashes, lengths and where they first differ: no content.
+const digest=v=>createHash('sha256').update(typeof v==='string'?v:JSON.stringify(v??null)).digest('hex').slice(0,12);
+// cache_control moves with every turn, and the runtime ignores it.
+function plain(v){
+  if(Array.isArray(v))return v.map(plain);
+  if(v&&typeof v==='object'){const o={};for(const k of Object.keys(v))if(k!=='cache_control')o[k]=plain(v[k]);return o;}
+  return v;
+}
+function systemText(s){return typeof s==='string'?s:Array.isArray(s)?s.filter(b=>b&&b.type==='text').map(b=>b.text).join('\n'):'';}
+// The changed span between two texts: where, how long on each side, and
+// whether both sides are only digits and date/time punctuation (a clock).
+export function textDiff(a,b){
+  if(a===b)return null;
+  const n=Math.min(a.length,b.length);let p=0;while(p<n&&a[p]===b[p])p++;
+  let s=0;while(s<n-p&&a[a.length-1-s]===b[b.length-1-s])s++;
+  const x=a.slice(p,a.length-s),y=b.slice(p,b.length-s),clock=/^[\d\s:.,\-+TZ/]*$/;
+  return {at:p,was:x.length,now:y.length,clockLike:clock.test(x)&&clock.test(y)};
+}
+export function requestShape(body){
+  const tools=(body.tools||[]).map(plain);
+  return {system:systemText(body.system),
+    tools:Object.fromEntries(tools.map(t=>[t.name||t.type,digest(t)])),
+    toolChoice:digest(body.tool_choice),
+    thinking:digest([body.thinking,body.output_config&&body.output_config.effort]),
+    messages:(body.messages||[]).map(m=>JSON.stringify(plain(m)))};
+}
+export function compareShapes(prev,cur){
+  const out={sys:digest(cur.system),sysLen:cur.system.length,tools:Object.keys(cur.tools).length,msgs:cur.messages.length};
+  if(!prev)return {...out,first:true};
+  const sys=textDiff(prev.system,cur.system);if(sys)out.sysDiff=sys;
+  const added=Object.keys(cur.tools).filter(k=>!(k in prev.tools)),removed=Object.keys(prev.tools).filter(k=>!(k in cur.tools));
+  const changed=Object.keys(cur.tools).filter(k=>k in prev.tools&&prev.tools[k]!==cur.tools[k]);
+  if(added.length||removed.length||changed.length)out.toolsDiff={added,removed,changed};
+  if(prev.toolChoice!==cur.toolChoice)out.toolChoiceChanged=true;
+  if(prev.thinking!==cur.thinking)out.thinkingChanged=true;
+  const n=Math.min(prev.messages.length,cur.messages.length);let i=0;while(i<n&&prev.messages[i]===cur.messages[i])i++;
+  if(i<prev.messages.length){
+    const was=prev.messages[i],now=cur.messages[i];
+    out.historyDiff={at:i,prevMsgs:prev.messages.length,...(now?{role:JSON.parse(now).role,span:textDiff(was,now)}:{})};
+  }
+  return out;
+}
+
 const PASS_HEADERS=['content-type','retry-after','x-should-retry','request-id','anthropic-ratelimit-unified-reset','anthropic-ratelimit-unified-status'];
 
 export function createBridge(readConfig) {
   let cached=null,inFlight=0,lastActivityAt=null;
+  const shapes=new Map();
   async function models(c){
     if(cached&&cached.gateway===c.gateway&&Date.now()-cached.at<60000)return cached.models;
     // Unauthenticated, Magpie lists its models under their own ids.
@@ -147,6 +195,12 @@ export function createBridge(readConfig) {
       if(!body.model)return error(res,404,'Unknown model: '+asked);
       const session=sessionLabel(body);
       entry={session,model:asked,target:body.model,endpoint:url.pathname,stream:body.stream===true};
+      if(session&&url.pathname==='/v1/messages'){
+        const shape=requestShape(body);
+        entry.shape=compareShapes(shapes.get(session),shape);
+        shapes.delete(session);shapes.set(session,shape);
+        if(shapes.size>8)shapes.delete(shapes.keys().next().value);
+      }
       const headers={'content-type':'application/json','authorization':`Bearer ${c.key}`,'anthropic-version':req.headers['anthropic-version']||'2023-06-01',
         'user-agent':'magpie-claude-science/0.2','x-magpie-client':'science',...(session?{'x-session-id':session}:{})};
       if(req.headers['anthropic-beta'])headers['anthropic-beta']=req.headers['anthropic-beta'];

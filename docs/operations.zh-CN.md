@@ -4,7 +4,7 @@
 
 推荐从 Magpie 插件页安装（`github:Guuuu233/claude-science-for-magpie`，不带 `#标签`），首次启用时自动初始化，见文末「Magpie 插件页自动初始化与更新」。插件已添加不等于初始化已完成：结果以 `autoinstall.log` 和 `doctor` 为准。
 
-终端安装：使用官方 Node.js 22/24，从[本分支 v0.2.4 GitHub Release](https://github.com/Guuuu233/claude-science-for-magpie/releases/tag/v0.2.4) 下载并解压 `claude-science-for-magpie-0.2.4.tgz`，在解压后的 `package/` 中执行 `npm install --omit=dev --ignore-scripts` 和 `node src/cli.js install`（或者克隆本仓库，在源码目录运行 `npm ci --ignore-scripts` 后安装），从现有模型中选择。非交互安装必须提供 `--model`；升级优先保留已选模型。
+终端安装：使用官方 Node.js 22/24，从[本分支 v0.2.5 GitHub Release](https://github.com/Guuuu233/claude-science-for-magpie/releases/tag/v0.2.5) 下载并解压 `claude-science-for-magpie-0.2.5.tgz`，在解压后的 `package/` 中执行 `npm install --omit=dev --ignore-scripts` 和 `node src/cli.js install`（或者克隆本仓库，在源码目录运行 `npm ci --ignore-scripts` 后安装），从现有模型中选择。非交互安装必须提供 `--model`；升级优先保留已选模型。
 
 插件安装的版本里没有源码目录，管理命令在已安装版本中运行：
 
