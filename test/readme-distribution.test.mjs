@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const docs = ['README.md', 'README.zh-CN.md', 'docs/operations.zh-CN.md'];
-const releaseUrl = 'https://github.com/Guuuu233/magpie-claude-science/releases/download/v0.2.0/magpie-claude-science-0.2.0.tgz';
+const releaseUrl = 'https://github.com/Guuuu233/magpie-claude-science/releases/download/v0.2.3/magpie-claude-science-0.2.3.tgz';
 
 test('public install instructions never invoke the upstream npm package', () => {
   for (const path of docs) {

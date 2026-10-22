@@ -22,7 +22,7 @@ test('agent declares the dedicated Science config and installed app', () => {
   assert.match(notice, /自动完成本机 Science 接入/);
   assert.match(notice, /首次|first/i);
   assert.deepEqual(metadata, {
-    id: 'claude-science', name: 'Claude Science', config: '~/.config/magpie/claude-science.json',
+    id: 'claude-science', name: 'Claude Science for Magpie', config: '~/.config/magpie/claude-science.json',
     format: 'json', model: 'model', dir: '/Applications/Claude Science.app', icon: SCIENCE_ICON,
   });
 });

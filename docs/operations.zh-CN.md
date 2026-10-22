@@ -2,9 +2,17 @@
 
 ## 安装与配置
 
-使用官方 Node.js 22/24，从[本分支 v0.2.0 GitHub Release](https://github.com/Guuuu233/magpie-claude-science/releases/tag/v0.2.0) 下载并解压 `magpie-claude-science-0.2.0.tgz`，在解压后的 `package/` 中执行 `npm install --omit=dev --ignore-scripts` 和 `node src/cli.js install`（或者克隆本仓库，在源码目录运行 `npm ci --ignore-scripts` 后安装），从现有模型中选择。非交互安装必须提供 `--model`；升级优先保留已选模型。仅在 Magpie 中添加插件不等于完成系统服务初始化。
+推荐从 Magpie 插件页安装（`github:Guuuu233/magpie-claude-science`，不带 `#标签`），首次启用时自动初始化，见文末「Magpie 插件页自动初始化与更新」。插件已添加不等于初始化已完成：结果以 `autoinstall.log` 和 `doctor` 为准。
 
-若首次 Sign in 后出现 `Sign in on the web` / `Paste code instead`，先在本分支 Release 的 `package/` 或源码目录执行 `node src/cli.js doctor`。未初始化时执行 `install`，成功后重新打开原 App，并关闭旧登录页；已初始化时核对服务状态和 `sciencePort`。不要将重新登录 Anthropic 作为接入步骤。
+终端安装：使用官方 Node.js 22/24，从[本分支 v0.2.3 GitHub Release](https://github.com/Guuuu233/magpie-claude-science/releases/tag/v0.2.3) 下载并解压 `magpie-claude-science-0.2.3.tgz`，在解压后的 `package/` 中执行 `npm install --omit=dev --ignore-scripts` 和 `node src/cli.js install`（或者克隆本仓库，在源码目录运行 `npm ci --ignore-scripts` 后安装），从现有模型中选择。非交互安装必须提供 `--model`；升级优先保留已选模型。
+
+插件安装的版本里没有源码目录，管理命令在已安装版本中运行：
+
+```sh
+R=~/.config/magpie/claude-science-runtime; P=$(node -p "require('$R/state.json').pluginSpec"); "$P/bin/node" "$P/src/cli.js" doctor
+```
+
+若首次 Sign in 后出现 `Sign in on the web` / `Paste code instead`，先执行 `doctor`（插件安装用上面的写法，终端安装在 Release 的 `package/` 或源码目录执行 `node src/cli.js doctor`）。未初始化时执行 `install`，成功后重新打开原 App，并关闭旧登录页；已初始化时核对服务状态和 `sciencePort`。不要将重新登录 Anthropic 作为接入步骤。
 
 可用选项：
 
@@ -27,7 +35,7 @@
 `~/.config/magpie/claude-science-runtime/` 包含：
 
 - `releases/<hash>/`：运行代码、生产依赖、Node 副本与校验清单。
-- `data/`、`auth/`：独立 Science 会话和本地启动身份。
+- `data/`、`auth/`：独立 Science 会话和本地启动身份。`auth/encryption.key` 的四把密钥另有一份在 macOS 钥匙串（服务名 `com.anthropic.operon-cli`，账户 `encryption.key-<密钥文件路径 SHA-256 前 12 位>`），Science 以钥匙串为准，两者不一致时用钥匙串覆盖文件、把文件原内容移入 `auth/.key-backups/`。
 - `state.json`：当前版本、上一个版本、端口和配置；包含本地令牌，不要公开。
 - `status.json`、`service.log`、`science.log`：状态与诊断；日志可能包含会话内容。
 - 恢复 journal、进程归属记录和操作锁：用于恢复配置与串行化操作。
@@ -51,7 +59,11 @@ node src/cli.js restart
 node src/cli.js uninstall
 ```
 
+插件安装的会随 Magpie 插件更新自动升级（见文末），无需手动 `upgrade`。
+
 卸载恢复原 Science 配置，移除当前服务，保留独立会话、身份及版本文件。卸载后再安装会采用当时的原配置，并保留独立身份。不要手工删除加密密钥。
+
+轮换本地加密密钥（例如密钥内容外泄后）：先结束 Science 任务并停止服务（`launchctl bootout gui/$(id -u)/ai.magpie.claude-science`），用新密钥重新加密 `auth/.oauth-tokens/<账户>.enc`（账户、组织和令牌不变），写入新的 `encryption.key`，删除上述钥匙串条目（`security delete-generic-password -s com.anthropic.operon-cli -a encryption.key-<前缀>`），再启动服务（`launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/ai.magpie.claude-science.plist`）。Science 启动时会把文件里的新密钥存回钥匙串（日志：`encryption keys copied to the macOS Keychain`）。只改文件不删钥匙串条目，Science 会换回旧密钥，导致 `Failed to read OAuth tokens`。轮换前先确认 `data/operon-cli.db` 中 `user_secrets`、`anthropic_api_keys`、`oauth_tokens`、`cloud_credentials`、`package_mirror_credentials` 没有记录，否则这些记录也须用新密钥重新加密。
 
 ## 故障恢复
 
@@ -71,7 +83,6 @@ Science 会列出 Magpie 模型目录中的全部模型：Claude TUI 模型以 C
 本地验证：`npm test`、`npm run check:package`、`npm run test:integration`。GitHub CI 执行同类检查；它使用模拟 Science，不下载或运行用户的真实科研数据。
 
 首次登录的实机验收必须使用独立的 HOME、数据目录和新生成的本地身份，并在无痕窗口或无原有登录状态的独立浏览器会话中打开该测试实例生成的一次性登录链接。确认 Sign in 后进入工作区，而非账号登录页；不能仅检查已有会话或 `/health`。同时检查只安装 Magpie 插件时的初始化提示。测试结束停止测试进程，不清除用户浏览器 Cookie 或真实会话。
-
 
 ## Magpie 插件页自动初始化与更新
 

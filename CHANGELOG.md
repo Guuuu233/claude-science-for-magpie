@@ -1,5 +1,12 @@
 # 更新日志 / Changelog
 
+## 0.2.3 (2026-10-22)
+
+### 变更 / Changes
+
+- 插件更名为 **Claude Science for Magpie**：Magpie Agent 页显示此名称，插件说明同步更新。包名 `magpie-claude-science` 与 GitHub 地址不变，已安装的照常收到更新。
+- 文档：快速开始改为插件页安装三步；终端安装指向 v0.2.3（v0.2.0 的升级会抹掉 `science.toml` 自加设置）；补充插件安装时运行 `doctor` 的写法、macOS 钥匙串中的密钥副本及密钥轮换步骤；TUI Boost 要求改为 v0.2.12 或更新版本。
+
 ## 0.2.2 (2026-10-22)
 
 ### 变更 / Changes

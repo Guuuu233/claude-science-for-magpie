@@ -3,7 +3,7 @@ import { SCIENCE_ICON } from './icon.js';
 // Magpie owns writing and restoring this file; this module performs no I/O.
 export const agent = {
   id: 'claude-science',
-  name: 'Claude Science',
+  name: 'Claude Science for Magpie',
   config: '~/.config/magpie/claude-science.json',
   format: 'json',
   model: 'model',
