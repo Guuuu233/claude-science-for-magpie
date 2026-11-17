@@ -14,6 +14,9 @@ export function scienceConfig(text,{data,auth,port}){
   // whole native turn (and a session rebuild), and Claude Code already caches
   // for an hour: off unless the user set it.
   if(c.cache_keepalive?.enabled===undefined)c.cache_keepalive={...c.cache_keepalive,enabled:false};
+  // Prevent the managed daemon or desktop shell from auto-updating the binary
+  // out from under Magpie's managed runtime unless the user explicitly opts in.
+  if(c.update?.auto_update===undefined)c.update={...c.update,auto_update:false};
   return '# Managed by magpie-claude-science; uninstall restores the original file.\n'+stringify(c);
 }
 // Science reads no approval setting from config.toml: only the serve flag

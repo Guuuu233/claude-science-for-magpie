@@ -35,7 +35,7 @@ R=~/.config/magpie/claude-science-runtime; P=$(node -p "require('$R/state.json')
 `~/.config/magpie/claude-science-runtime/` 包含：
 
 - `releases/<hash>/`：运行代码、生产依赖、Node 副本与校验清单。
-- `science.toml`：Science 配置。插件默认写入 `[cache_keepalive] enabled = false`（关闭缓存保温：经 Claude TUI 时每次保温都是一整轮原生回答并重写缓存），用户显式设置的值保留。Science 不从配置文件读取审批开关；在这里写 `[sandbox]` 下的 `skip_approvals = true`，插件启动 Science 时会加上 `--dangerously-skip-approvals`（所有审批卡自动通过：代码执行、网络、文件、工具；改后执行 `restart` 生效）。不写或为 `false` 时照常弹审批卡。
+- `science.toml`：Science 配置。插件默认写入 `[cache_keepalive] enabled = false`（关闭缓存保温：经 Claude TUI 时每次保温都是一整轮原生回答并重写缓存）与 `[update] auto_update = false`（关闭后台自动更新，避免脱离受管运行环境自行升级），用户显式设置的值保留。Science 不从配置文件读取审批开关；在这里写 `[sandbox]` 下的 `skip_approvals = true`，插件启动 Science 时会加上 `--dangerously-skip-approvals`（所有审批卡自动通过：代码执行、网络、文件、工具；改后执行 `restart` 生效）。不写或为 `false` 时照常弹审批卡。
 - `data/`、`auth/`：独立 Science 会话和本地启动身份。`auth/encryption.key` 的四把密钥另有一份在 macOS 钥匙串（服务名 `com.anthropic.operon-cli`，账户 `encryption.key-<密钥文件路径 SHA-256 前 12 位>`），Science 以钥匙串为准，两者不一致时用钥匙串覆盖文件、把文件原内容移入 `auth/.key-backups/`。
 - `state.json`：当前版本、上一个版本、端口和配置；包含本地令牌，不要公开。
 - `status.json`、`service.log`、`science.log`：状态与诊断；日志可能包含会话内容。

@@ -23,6 +23,14 @@ test('cache keep-warm pings are off unless the user chose otherwise',()=>{
   const tuned=parse(api.scienceConfig('[cache_keepalive]\ninterval_s=200\n',{data:'/d',auth:'/a',port:1}));
   assert.deepEqual({...tuned.cache_keepalive},{interval_s:200,enabled:false});
 });
+test('auto-update is off unless the user chose otherwise',()=>{
+  const off=parse(api.scienceConfig('',{data:'/d',auth:'/a',port:1}));
+  assert.equal(off.update.auto_update,false);
+  const kept=parse(api.scienceConfig('[update]\nauto_update=true\nrelease_channel="beta"\n',{data:'/d',auth:'/a',port:1}));
+  assert.deepEqual({...kept.update},{auto_update:true,release_channel:'beta'});
+  const tuned=parse(api.scienceConfig('[update]\nrelease_channel="beta"\n',{data:'/d',auth:'/a',port:1}));
+  assert.deepEqual({...tuned.update},{release_channel:'beta',auto_update:false});
+});
 test('only an explicit [sandbox] skip_approvals = true opts out of approval cards',()=>{
   assert.equal(api.skipApprovals('[sandbox]\ndisabled = true\nskip_approvals = true\n'),true);
   assert.equal(api.skipApprovals('[sandbox]\ndisabled = true\n'),false);
