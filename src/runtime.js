@@ -40,6 +40,7 @@ export async function runRuntime(state,{pollMs=2000,startTimeoutMs=600000,stopTi
     return validateConfig({
       ...legacyConfig,
       model:pluginConfig.model||legacyConfig.model||state.model,
+      ...(pluginConfig.auxModel||legacyConfig.auxModel||state.auxModel?{auxModel:pluginConfig.auxModel||legacyConfig.auxModel||state.auxModel}:{}),
       ...(pluginConfig.claude||state.claude?{claude:pluginConfig.claude||state.claude}:{}),
       gateway:state.gatewayOverride?state.gateway:pluginConfig.gateway||legacyConfig.gateway||state.gateway,
       key:legacyConfig.key||'magpie-claude-science',

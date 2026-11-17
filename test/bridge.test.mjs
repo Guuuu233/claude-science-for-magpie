@@ -147,3 +147,14 @@ test('an unreachable Magpie is a clear 502, not a hang',async()=>{
     assert.match((await res.json()).error.message,/could not reach Magpie/);
   }finally{server.closeAllConnections();await new Promise(r=>server.close(r));}
 });
+test('auxModel takes Science\'s Haiku and Sonnet 4.6 helper calls and nothing else',()=>{
+  const c={gateway:'http://127.0.0.1:1',model:'fake/main',key:'k',token:'t',claude:'gtt-claude/claude-tui',auxModel:'auto/small'};
+  assert.doesNotThrow(()=>validateConfig(c));
+  for(const id of ['claude-haiku-4-5-20251001','claude-3-5-haiku-20241022','claude-3-haiku-20240307','claude-sonnet-4-6'])
+    assert.equal(upstreamModel(id,c),'auto/small',id);
+  assert.equal(upstreamModel('claude-opus-5-5',c),'gtt-claude/claude-tui/claude-opus-5-5');
+  assert.equal(upstreamModel('claude-sonnet-5-5',c),'gtt-claude/claude-tui/claude-sonnet-5-5');
+  assert.equal(upstreamModel('claude-haiku-4-5-20251001',{...c,auxModel:undefined}),'gtt-claude/claude-tui/claude-haiku-4-5-20251001');
+  assert.throws(()=>validateConfig({...c,auxModel:'claude-science/x'}),/Invalid aux model/);
+  assert.throws(()=>validateConfig({...c,auxModel:'no-slash'}),/Invalid aux model/);
+});

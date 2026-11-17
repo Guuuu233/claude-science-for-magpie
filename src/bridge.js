@@ -9,10 +9,12 @@ import fs from 'node:fs';
 // Claude TUI runtime needs to keep one native session per Science frame.
 
 export const DEFAULT_CLAUDE='claude-tui';
+const AUX_CLAUDE=/^claude-(?:(?:3-5-|3-)?haiku(?:-|$)|sonnet-4-6$)/;
 export function validateConfig(c) {
   const u=new URL(c.gateway);
   if(!['http:','https:'].includes(u.protocol)||!['127.0.0.1','[::1]'].includes(u.hostname)||u.username||u.password||u.search||u.hash||!['','/'].includes(u.pathname)) throw Error('Gateway must be a literal loopback origin');
   if(typeof c.model!=='string'||!/^[-\w.]+\/[-\w./:]+$/.test(c.model)||c.model.startsWith('claude-science/')) throw Error('Invalid upstream model');
+  if(c.auxModel!==undefined&&(typeof c.auxModel!=='string'||!/^[-\w.]+\/[-\w./:]+$/.test(c.auxModel)||c.auxModel.startsWith('claude-science/'))) throw Error('Invalid aux model');
   if(c.claude!==undefined&&(typeof c.claude!=='string'||!/^[-\w.]+(\/[-\w.]+)*$/.test(c.claude))) throw Error('Invalid Claude provider');
   if(typeof c.key!=='string'||!/^[\x21-\x7e]+$/.test(c.key))throw Error('Invalid gateway key');
   if(typeof c.token!=='string'||!c.token)throw Error('Local token required');
@@ -38,6 +40,7 @@ function shownName(name,id){
 // they run on the Claude TUI provider of the same name. An alias runs on the
 // Magpie model it names (ids: Magpie's catalog); other ids are unchanged.
 export function upstreamModel(id,c,ids=[]){
+  if(c.auxModel&&AUX_CLAUDE.test(id))return c.auxModel;
   if(CLAUDE_ID.test(id))return (c.claude||DEFAULT_CLAUDE)+'/'+id;
   if(id.startsWith(ALIAS))return ids.find(x=>aliasOf(x)===id)||null;
   return id;

@@ -56,6 +56,7 @@ export function createInstaller(deps={}) {
     if(!entry){entry={spec};registry.plugins.push(entry);}
     entry.off=false;
     entry.options={...entry.options,agent:'claude-science',model:state.model,gateway:state.gateway};
+    if(state.auxModel)entry.options.auxModel=state.auxModel;else delete entry.options.auxModel;
     if(state.claude)entry.options.claude=state.claude;else delete entry.options.claude;
     // Disable other Science plugins in the same transactional registry write:
     // calling the Magpie CLI here would edit plugins.json outside the managed
@@ -73,6 +74,8 @@ export function createInstaller(deps={}) {
     const gatewayOverride=options.gateway!==undefined||previous?.gatewayOverride===true;
     const claude=options.claude??previous?.claude;
     if(claude!==undefined&&!/^[-\w.]+(\/[-\w.]+)*$/.test(claude))throw Error('Invalid --claude provider: '+claude);
+    const auxModel=options.auxModel??previous?.auxModel;
+    if(auxModel!==undefined&&(!/^[-\w.]+\/[-\w./:]+$/.test(auxModel)||auxModel.startsWith('claude-science/')))throw Error('Invalid --aux-model: '+auxModel);
     const gateway=resolveGateway({gateway:options.gateway||(previous?.gatewayOverride?previous.gateway:undefined),settings:json(path.join(configRoot,'settings.json'))||{}});
     const response=await fetcher(gateway+'/api/hello',{signal:AbortSignal.timeout(3000)});if(!response.ok||(await response.json()).name!=='magpie')throw Error('Start Magpie before installing');
     const catalog=await fetcher(gateway+'/v1/models',{signal:AbortSignal.timeout(5000)});if(!catalog.ok)throw Error('Cannot read Magpie model catalog');
@@ -116,7 +119,7 @@ export function createInstaller(deps={}) {
         const state={...(previous||{}),installed:true,project:deployment.path,pluginSpec:deployment.path,
           registrySpec:installedSource?.spec||previous?.registrySpec||deployment.path,node:deployment.node,deployment,
         previousDeployment:previous?.deployment&&previous.deployment.id!==deployment.id?previous.deployment:previous?.previousDeployment,
-        magpie,binary,model,gateway,gatewayOverride,...(claude?{claude}:{}),originalDir,originalConfig,
+        magpie,binary,model,gateway,gatewayOverride,...(auxModel?{auxModel}:{}),...(claude?{claude}:{}),originalDir,originalConfig,
         agentConfig:path.join(configRoot,'claude-science.json'),pluginsFile:path.join(configRoot,'plugins.json'),
         scienceConfig:path.join(root,'science.toml'),configJournal:path.join(root,'config-journal.json'),statusFile:path.join(root,'status.json'),scienceLog:path.join(root,'science.log'),
         data:previous?.data||path.join(root,'data'),auth:previous?.auth||path.join(root,'auth'),token:previous?.token||randomBytes(32).toString('hex'),...reserved.ports};

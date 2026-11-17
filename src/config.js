@@ -4,6 +4,7 @@ import net from 'node:net';
 
 export const help = `Usage: claude-science-for-magpie <install|upgrade|rollback|doctor|restart|uninstall> [options]
   --model <catalog-id>      Magpie model (required for unattended first install)
+  --aux-model <catalog-id>  Optional Magpie model for Science's Haiku 4.5 / Sonnet 4.6 helper calls
   --gateway <loopback-url>  Defaults to Magpie settings port, then 3425
   --claude <provider>       Magpie provider for Science's Claude models (default claude-tui; a remote one is e.g. my-vps/claude-tui)
   --magpie <executable>     Also MAGPIE_BIN, PATH, or the macOS app
@@ -11,7 +12,7 @@ export const help = `Usage: claude-science-for-magpie <install|upgrade|rollback|
   --science-port <port> --preview-port <port> --bridge-port <port>
   --help                   Show help without modifying anything
 `;
-const keys = {'--model':'model','--gateway':'gateway','--claude':'claude','--magpie':'magpie','--science':'science','--science-port':'sciencePort','--preview-port':'sandboxPort','--bridge-port':'bridgePort'};
+const keys = {'--model':'model','--aux-model':'auxModel','--gateway':'gateway','--claude':'claude','--magpie':'magpie','--science':'science','--science-port':'sciencePort','--preview-port':'sandboxPort','--bridge-port':'bridgePort'};
 export function parseArgs(args) {
   if(args.includes('--help') || args.includes('-h')) return {command:'help'};
   const result={command:args[0]||'help'};
