@@ -1,5 +1,13 @@
 # 更新日志 / Changelog
 
+## 0.2.7 (2026-11-17)
+
+### 变更 / Changes
+
+- 审批开关真正生效：Science（0.1.60 与 0.1.72 均已核实）不从配置文件读取审批设置，只有启动参数 `--dangerously-skip-approvals` 能关闭审批卡，所以此前写在托管 `science.toml` 里的 `[sandbox] skip_approvals = true` 一直不起作用。现在插件启动 Science 时读取这一项，为 `true` 就加上该参数；不写或为其他值时行为不变。改后执行 `restart` 生效。
+- 新增 `install --aux-model <目录ID>`（插件选项 `auxModel`）：把 Science 的后台小模型请求（`claude-*haiku*`、`claude-sonnet-4-6`）改发到指定的 Magpie 模型。不设置时行为不变。
+- If `[sandbox] skip_approvals = true` is set in the managed `science.toml`, the plugin now starts Science with `--dangerously-skip-approvals` (Science itself never read that key). New optional `--aux-model` / `auxModel` routes Science's Haiku and Sonnet 4.6 helper calls to a chosen Magpie model.
+
 ## 0.2.6 (2026-10-22)
 
 ### 变更 / Changes

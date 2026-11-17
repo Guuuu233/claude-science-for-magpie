@@ -33,7 +33,7 @@ To manage the installation yourself, start Magpie, finish active Science tasks a
 
 ```sh
 mkdir -p claude-science-for-magpie && cd claude-science-for-magpie
-curl -fL https://github.com/Guuuu233/claude-science-for-magpie/releases/download/v0.2.6/claude-science-for-magpie-0.2.6.tgz -o science.tgz
+curl -fL https://github.com/Guuuu233/claude-science-for-magpie/releases/download/v0.2.7/claude-science-for-magpie-0.2.7.tgz -o science.tgz
 tar -xzf science.tgz
 cd package
 npm install --omit=dev --ignore-scripts
@@ -43,7 +43,7 @@ node src/cli.js install
 Or from the source tag:
 
 ```sh
-git clone --branch v0.2.6 --depth 1 https://github.com/Guuuu233/claude-science-for-magpie.git
+git clone --branch v0.2.7 --depth 1 https://github.com/Guuuu233/claude-science-for-magpie.git
 cd claude-science-for-magpie
 npm ci --ignore-scripts
 node src/cli.js install
@@ -92,6 +92,8 @@ Science keeps a copy of the profile's local encryption keys in the macOS Keychai
 
 ## Limitations
 
+- `install --aux-model <catalog-id>` (or the plugin option `auxModel`) sends Science's background helper calls (Haiku, Sonnet 4.6: titles, memory extraction and the like) to that Magpie model; unset, they run on the `--claude` provider like other Claude models.
+- Approval cards: Science reads no approval setting from `science.toml`. Put `skip_approvals = true` under `[sandbox]` in the managed `science.toml` and run `restart`: the plugin then starts Science with `--dangerously-skip-approvals`, which approves every card. Use it only on input you trust.
 - Science lists every model in your Magpie catalog. Claude TUI models appear under their Claude names (`claude-opus-5-5`, ...) and run on the provider chosen with `install --claude <provider>` (default `claude-tui`, the Claude TUI plugin on this Magpie; a remote Magpie's is e.g. `my-vps/claude-tui`). Science only shows ids starting with `claude-`, so every other model appears under a stable alias `claude-x-<id>-<hash>` with its Magpie name, and runs on that Magpie model.
 - Long Science conversations on Claude TUI models need [Claude TUI Boost](https://github.com/Guuuu233/claude-tui-boost) **v0.2.12 or newer**, which serves each conversation from its own history. Earlier 0.2.x runtimes refuse rewritten or interrupted histories (409/502). Other Magpie providers are ordinary stateless models and need nothing special.
 - Anthropic-hosted search, MCP and account services are not provided.

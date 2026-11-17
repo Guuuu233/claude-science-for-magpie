@@ -23,3 +23,13 @@ test('cache keep-warm pings are off unless the user chose otherwise',()=>{
   const tuned=parse(api.scienceConfig('[cache_keepalive]\ninterval_s=200\n',{data:'/d',auth:'/a',port:1}));
   assert.deepEqual({...tuned.cache_keepalive},{interval_s:200,enabled:false});
 });
+test('only an explicit [sandbox] skip_approvals = true opts out of approval cards',()=>{
+  assert.equal(api.skipApprovals('[sandbox]\ndisabled = true\nskip_approvals = true\n'),true);
+  assert.equal(api.skipApprovals('[sandbox]\ndisabled = true\n'),false);
+  assert.equal(api.skipApprovals('[sandbox]\nskip_approvals = "true"\n'),false);
+  assert.equal(api.skipApprovals('skip_approvals = true\n'),false);
+  assert.equal(api.skipApprovals(''),false);
+  assert.equal(api.skipApprovals('not [ valid toml'),false);
+  const kept=api.scienceConfig('[sandbox]\ndisabled = true\nskip_approvals = true\n',{data:'/d',auth:'/a',port:1});
+  assert.equal(api.skipApprovals(kept),true);
+});

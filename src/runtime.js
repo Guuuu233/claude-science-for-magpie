@@ -6,6 +6,7 @@ import {pathToFileURL} from 'node:url';
 import {enabledSciencePlugins} from './plugin-identity.js';
 import {createBridge,validateConfig} from './bridge.js';
 import {managedWrite,restoreAll} from './files.js';
+import {skipApprovals} from './setup.js';
 import {readProcessIdentity,ownsDaemon,signalOwnedDaemon,acquireRuntimeOwner} from './processes.js';
 
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -95,6 +96,7 @@ export async function runRuntime(state,{pollMs=2000,startTimeoutMs=600000,stopTi
     const log=fs.openSync(state.scienceLog,'a',0o600);
     const args=['serve','--config',state.scienceConfig,'--data-dir',state.data,'--port',String(state.sciencePort),'--no-browser','--no-auto-update'];
     if(state.sandboxPort)args.push('--sandbox-port',String(state.sandboxPort));
+    if(skipApprovals(fs.readFileSync(state.scienceConfig,'utf8')))args.push('--dangerously-skip-approvals');
     const proc=spawn(state.binary,args,{env:{...process.env,ANTHROPIC_BASE_URL:`http://127.0.0.1:${state.bridgePort}`,ANTHROPIC_API_KEY:'',ANTHROPIC_AUTH_TOKEN:'',NO_PROXY:'127.0.0.1,localhost,::1',no_proxy:'127.0.0.1,localhost,::1'},stdio:['ignore',log,log]});
     fs.closeSync(log);child=proc;
     let spawnError=null;

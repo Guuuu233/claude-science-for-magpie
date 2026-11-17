@@ -16,6 +16,12 @@ export function scienceConfig(text,{data,auth,port}){
   if(c.cache_keepalive?.enabled===undefined)c.cache_keepalive={...c.cache_keepalive,enabled:false};
   return '# Managed by magpie-claude-science; uninstall restores the original file.\n'+stringify(c);
 }
+// Science reads no approval setting from config.toml: only the serve flag
+// --dangerously-skip-approvals turns approval cards off. The managed file's
+// [sandbox] skip_approvals = true is the user's opt-in to pass that flag.
+export function skipApprovals(text){
+  try{return parse(text||'').sandbox?.skip_approvals===true;}catch{return false;}
+}
 const xml=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 export function launchPlist({node,script,state,log}){
   return `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0"><dict>

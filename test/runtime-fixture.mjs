@@ -24,7 +24,7 @@ export async function fixture({missing=false,noLock=false}={}){
 const fs=require('node:fs'),http=require('node:http'),path=require('node:path');
 const arg=n=>process.argv[process.argv.indexOf(n)+1],data=arg('--data-dir'),port=Number(arg('--port'));
 const server=http.createServer((q,r)=>{r.setHeader('content-type','application/json');r.end(JSON.stringify({status:'healthy',service:'gateway'}));});
-server.listen(port,'127.0.0.1',()=>{if(!${noLock})fs.writeFileSync(path.join(data,'operon.lock'),JSON.stringify({pid:process.pid,port,sandbox_port:Number(arg('--sandbox-port')),version:'fixture-1'}));});
+server.listen(port,'127.0.0.1',()=>{fs.writeFileSync(path.join(data,'argv.json'),JSON.stringify(process.argv.slice(2)));if(!${noLock})fs.writeFileSync(path.join(data,'operon.lock'),JSON.stringify({pid:process.pid,port,sandbox_port:Number(arg('--sandbox-port')),version:'fixture-1'}));});
 process.on('SIGTERM',()=>{try{fs.unlinkSync(path.join(data,'operon.lock'));}catch{}server.close(()=>process.exit(0));});
 `,{mode:0o700});
  const file=path.join(root,'state.json');fs.writeFileSync(file,JSON.stringify(state));

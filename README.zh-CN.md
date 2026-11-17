@@ -33,7 +33,7 @@
 
 ```sh
 mkdir -p claude-science-for-magpie && cd claude-science-for-magpie
-curl -fL https://github.com/Guuuu233/claude-science-for-magpie/releases/download/v0.2.6/claude-science-for-magpie-0.2.6.tgz -o science.tgz
+curl -fL https://github.com/Guuuu233/claude-science-for-magpie/releases/download/v0.2.7/claude-science-for-magpie-0.2.7.tgz -o science.tgz
 tar -xzf science.tgz
 cd package
 npm install --omit=dev --ignore-scripts
@@ -43,7 +43,7 @@ node src/cli.js install
 或者从源码标签安装：
 
 ```sh
-git clone --branch v0.2.6 --depth 1 https://github.com/Guuuu233/claude-science-for-magpie.git
+git clone --branch v0.2.7 --depth 1 https://github.com/Guuuu233/claude-science-for-magpie.git
 cd claude-science-for-magpie
 npm ci --ignore-scripts
 node src/cli.js install
@@ -92,6 +92,8 @@ Science 会把本地加密密钥另存一份到 macOS 钥匙串（服务名 `com
 
 ## 当前限制
 
+- `install --aux-model <目录ID>`（或插件选项 `auxModel`）可把 Science 的后台小模型请求（Haiku、Sonnet 4.6：标题、记忆提取等）改发到指定的 Magpie 模型；不设置时它们和其他 Claude 模型一样走 `--claude` 的 provider。
+- 审批卡：Science 不从 `science.toml` 读取审批开关。在托管的 `science.toml` 里写 `[sandbox]` 下的 `skip_approvals = true` 后执行 `restart`，插件会用 `--dangerously-skip-approvals` 启动 Science，所有审批卡自动通过。只在你信任输入内容时使用。
 - Science 会列出 Magpie 模型目录中的全部模型。Claude TUI 模型以 Claude 原名（如 `claude-opus-5-5`）出现，走 `install --claude <provider>` 指定的 provider（默认 `claude-tui`，即本机 Magpie 上的 Claude TUI 插件；远程 Magpie 的写法如 `my-vps/claude-tui`）。Science 只显示以 `claude-` 开头的 ID，所以其他模型以固定别名 `claude-x-<原ID>-<哈希>` 出现，名称不变，请求仍发往对应的 Magpie 模型。
 - 在 Claude TUI 模型上进行长时间的 Science 对话，需要 [Claude TUI Boost](https://github.com/Guuuu233/claude-tui-boost) **v0.2.12 或更新版本**，它按每个对话自身的历史服务。更早的 0.2.x 会拒绝被改写或被中断过的历史（409/502）。其他 Magpie 供应商是普通的无状态模型，不需要特殊处理。
 - 不提供 Anthropic 托管的搜索、MCP 和账号服务。

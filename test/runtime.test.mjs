@@ -19,6 +19,20 @@ test('healthy owned daemon is required before redirect; disconnect restores orig
  }finally{await f.cleanup();}
 });
 
+test('approval cards stay on unless the managed config opts out with [sandbox] skip_approvals = true',async()=>{
+ const argv=f=>JSON.parse(fs.readFileSync(path.join(f.state.data,'argv.json'),'utf8'));
+ const off=await fixture();try{
+  off.start();await until(()=>off.status().state==='running');
+  assert.ok(argv(off).includes('--no-auto-update'));assert.ok(!argv(off).includes('--dangerously-skip-approvals'));
+ }finally{await off.cleanup();}
+ const on=await fixture();try{
+  fs.writeFileSync(on.state.scienceConfig,'data_dir="managed"\n[sandbox]\ndisabled = true\nskip_approvals = true\n');
+  on.start();await until(()=>on.status().state==='running');
+  assert.ok(argv(on).includes('--dangerously-skip-approvals'));
+  assert.equal(on.status().sciencePid,JSON.parse(fs.readFileSync(path.join(on.state.data,'operon.lock'))).pid);
+ }finally{await on.cleanup();}
+});
+
 test('missing binary never redirects the native app',async()=>{
  const f=await fixture({missing:true});try{f.start();await until(()=>f.status().state==='error');assert.equal(fs.readFileSync(f.state.originalConfig,'utf8'),'# ORIGINAL\n');}finally{await f.cleanup();}
 });
