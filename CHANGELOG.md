@@ -1,5 +1,13 @@
 # 更新日志 / Changelog
 
+## 0.2.8 (2026-11-18)
+
+### 修复 / Fixes
+
+- 上下文超长时不再空转重试：Science 只有在错误里看到 "prompt is too long" 才会压缩对话。Gemini 等提供方的超长报错措辞不同（如 `The input token count exceeds the maximum number of tokens allowed 1048576.`），流式返回时类型是 `api_error`，Science 把它当成临时服务端错误，用同一请求最多重试 30 次，界面一直显示 "Claude is temporarily unavailable — retrying…"。桥接现在把这类报错改写成 Anthropic 格式的 `invalid_request_error`（`prompt is too long: N tokens > M maximum`，保留原文），非流式 5xx 改为 400，Science 随即进入压缩流程。
+- 托管 `science.toml` 默认写入 `[update] auto_update = false`（用户已设置的保持不变），避免 Science 自行更新替换插件管理的程序。
+- A provider's over-long-prompt error (e.g. Gemini's "input token count exceeds the maximum number of tokens allowed") is now relayed as Anthropic's "prompt is too long" `invalid_request_error`, so Science compacts instead of resending the same prompt up to 30 times. The managed `science.toml` now defaults to `[update] auto_update = false`.
+
 ## 0.2.7 (2026-11-17)
 
 ### 变更 / Changes

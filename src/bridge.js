@@ -68,9 +68,33 @@ const log=entry=>{try{fs.appendFileSync(LOG,new Date().toISOString()+' '+JSON.st
 function json(res,status,value){res.writeHead(status,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify(value));}
 function error(res,status,message){json(res,status,{type:'error',error:{type:status===401?'authentication_error':status>=500?'api_error':'invalid_request_error',message}});}
 function same(a,b){const x=Buffer.from(a),y=Buffer.from(b);return x.length===y.length&&timingSafeEqual(x,y);}
-function restore(line,model){
+// Science (0.1.72) compacts a conversation only when the error says "prompt
+// is too long". Other providers word an over-long prompt differently (Gemini:
+// "The input token count exceeds the maximum number of tokens allowed
+// 1048576."); Science takes that for a transient server error and resends the
+// same prompt, up to 30 times. Reword it, as a non-retryable request error, in
+// Anthropic's form so Science compacts instead.
+const OVERFLOW=[/input token count exceeds the maximum number of tokens allowed\D{0,3}(\d+)/i,/maximum context length is (\d+) tokens/i,/context_length_exceeded/i];
+export function overflowError(err){
+  if(!err||typeof err!=='object')return null;
+  const msg=String(err.message||'');
+  if(/prompt is too long/i.test(msg))return null;
+  for(const re of OVERFLOW){
+    const m=re.exec(msg)||re.exec(String(err.code||''));
+    if(!m)continue;
+    const max=m[1]?Number(m[1]):0;
+    return {...err,type:'invalid_request_error',message:(max?`prompt is too long: ${max+1} tokens > ${max} maximum`:'prompt is too long')+` (upstream: ${msg})`};
+  }
+  return null;
+}
+function restore(line,model,entry){
   if(!line.startsWith('data:'))return line;
-  try{const obj=JSON.parse(line.slice(5));if(obj.type==='message_start'&&obj.message)obj.message.model=model;return 'data: '+JSON.stringify(obj);}catch{return line;}
+  try{
+    const obj=JSON.parse(line.slice(5));
+    if(obj.type==='message_start'&&obj.message)obj.message.model=model;
+    if(obj.type==='error'){const e=overflowError(obj.error);if(e){obj.error=e;if(entry)entry.rewrote='prompt_too_long';}}
+    return 'data: '+JSON.stringify(obj);
+  }catch{return line;}
 }
 
 // Science (0.1.60) puts the executing frame in metadata.user_id:
@@ -210,26 +234,29 @@ export function createBridge(readConfig) {
       const upstream=await fetch(c.gateway.replace(/\/$/,'')+url.pathname,{method:'POST',headers,body:JSON.stringify(body),signal:abort.signal,redirect:'error'});
       const out={'cache-control':'no-store'};
       for(const h of PASS_HEADERS){const v=upstream.headers.get(h);if(v)out[h]=v;}
-      res.writeHead(upstream.status,out);
+      let status=upstream.status;
       const sse=(upstream.headers.get('content-type')||'').includes('text/event-stream');
       if(sse&&upstream.body){
+        res.writeHead(status,out);
         const decoder=new TextDecoder();let pending='';
         for await(const chunk of upstream.body){
           pending+=decoder.decode(chunk,{stream:true});let i;
           while((i=pending.indexOf('\n'))>=0){
             const line=pending.slice(0,i);pending=pending.slice(i+1);
-            if(!res.write(restore(line,asked)+'\n'))await new Promise(r=>{res.once('drain',r);res.once('close',r);});
+            if(!res.write(restore(line,asked,entry)+'\n'))await new Promise(r=>{res.once('drain',r);res.once('close',r);});
           }
         }
         pending+=decoder.decode();
-        res.end(pending?restore(pending,asked):undefined);
+        res.end(pending?restore(pending,asked,entry):undefined);
       }else{
         const text=await upstream.text();
         let outText=text;
         if(upstream.ok){try{const v=JSON.parse(text);if(v&&v.type==='message')v.model=asked;outText=JSON.stringify(v);}catch{}}
+        else{try{const v=JSON.parse(text);const e=overflowError(v&&v.error);if(e){v.error=e;outText=JSON.stringify(v);status=400;entry.rewrote='prompt_too_long';}}catch{}}
+        res.writeHead(status,out);
         res.end(outText);
       }
-      log({...entry,status:upstream.status,ms:Date.now()-startedAt});
+      log({...entry,status,ms:Date.now()-startedAt});
     }catch(e){
       const gone=abort.signal.aborted;
       log({...entry,error:gone?'client_disconnect':String(e&&e.message||e),ms:Date.now()-startedAt});

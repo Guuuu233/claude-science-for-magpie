@@ -122,6 +122,30 @@ test('upstream errors reach Science as they are, once: status, headers and body'
   }finally{await h.close();}
 });
 
+test('a provider\'s over-long-prompt error reaches Science as "prompt is too long", so Science compacts instead of resending',async()=>{
+  const gemini='The input token count exceeds the maximum number of tokens allowed 1048576.';
+  const h=await harness(async(req,res,body)=>{
+    if(body.stream){
+      res.setHeader('content-type','text/event-stream');
+      res.end('event: error\ndata: '+JSON.stringify({type:'error',error:{type:'api_error',message:gemini}})+'\n\n');
+    }else{
+      res.writeHead(500,{'content-type':'application/json'});
+      res.end(JSON.stringify({type:'error',error:{type:'api_error',message:gemini}}));
+    }
+  });
+  try{
+    const streamed=await fetch(h.base+'/v1/messages',{method:'POST',headers:h.headers,body:JSON.stringify({model:'claude-opus-5-5',stream:true,messages:[{role:'user',content:'x'}]})});
+    const line=(await streamed.text()).split('\n').find(l=>l.startsWith('data:'));
+    const ev=JSON.parse(line.slice(5));
+    assert.equal(ev.error.type,'invalid_request_error','Science retries api_error in a stream 30 times');
+    assert.match(ev.error.message,/^prompt is too long: 1048577 tokens > 1048576 maximum/);
+    assert.ok(ev.error.message.includes(gemini),'the provider\'s own words are kept');
+    const plain=await fetch(h.base+'/v1/messages',{method:'POST',headers:h.headers,body:JSON.stringify({model:'claude-opus-5-5',messages:[{role:'user',content:'x'}]})});
+    assert.equal(plain.status,400,'a 5xx would be retried as a server error');
+    assert.match((await plain.json()).error.message,/^prompt is too long: 1048577 tokens/);
+  }finally{await h.close();}
+});
+
 test('a client that goes away cancels the upstream request',async()=>{
   let upstreamClosed;const closed=new Promise(r=>{upstreamClosed=r;});
   const h=await harness(async(req,res)=>{

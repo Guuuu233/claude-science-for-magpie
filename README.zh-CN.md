@@ -33,7 +33,7 @@
 
 ```sh
 mkdir -p claude-science-for-magpie && cd claude-science-for-magpie
-curl -fL https://github.com/Guuuu233/claude-science-for-magpie/releases/download/v0.2.7/claude-science-for-magpie-0.2.7.tgz -o science.tgz
+curl -fL https://github.com/Guuuu233/claude-science-for-magpie/releases/download/v0.2.8/claude-science-for-magpie-0.2.8.tgz -o science.tgz
 tar -xzf science.tgz
 cd package
 npm install --omit=dev --ignore-scripts
@@ -43,7 +43,7 @@ node src/cli.js install
 或者从源码标签安装：
 
 ```sh
-git clone --branch v0.2.7 --depth 1 https://github.com/Guuuu233/claude-science-for-magpie.git
+git clone --branch v0.2.8 --depth 1 https://github.com/Guuuu233/claude-science-for-magpie.git
 cd claude-science-for-magpie
 npm ci --ignore-scripts
 node src/cli.js install
